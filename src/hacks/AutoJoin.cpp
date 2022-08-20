@@ -1,4 +1,3 @@
-
 /*
  * AutoJoin.cpp
  *
@@ -20,6 +19,7 @@ static settings::Boolean autojoin_team{ "autojoin.team", "false" };
 static settings::Int autojoin_class{ "autojoin.class", "0" };
 static settings::Boolean auto_queue{ "autojoin.auto-queue", "false" };
 static settings::Boolean auto_requeue{ "autojoin.auto-requeue", "false" };
+static settings::Boolean auto_unqueue{ "autojoin.auto-unqueue", "false" };
 static settings::Boolean partybypass{ "hack.party-bypass", "true" };
 
 /*
@@ -71,11 +71,12 @@ void updateSearch()
     re::CTFGCClientSystem *gc = re::CTFGCClientSystem::GTFGCClientSystem();
     re::CTFPartyClient *pc    = re::CTFPartyClient::GTFPartyClient();
 
-    if (current_user_cmd && gc && gc->BConnectedToMatchServer(false) && gc->BHaveLiveMatch())
+    if (auto_unqueue && current_user_cmd && gc && gc->BConnectedToMatchServer(false) && gc->BHaveLiveMatch())
     {
 #if not ENABLE_VISUALS
         queue_time.update();
 #endif
+        tfmm::leaveQueue();
     }
 
     if (auto_requeue)
@@ -84,7 +85,7 @@ void updateSearch()
             if (pc && !(pc->BInQueueForMatchGroup(tfmm::getQueue()) || pc->BInQueueForStandby()))
             {
                 logging::Info("Starting queue for standby, Invites %d", invites);
-                tfmm::startQueueStandby();
+                tfmm::startQueue();
             }
     }
 
@@ -98,12 +99,6 @@ void updateSearch()
             }
     }
     startqueue_timer.test_and_set(2000);
-#if not ENABLE_VISUALS
-    if (queue_time.test_and_set(1800000))
-    {
-        g_IEngine->ClientCmd_Unrestricted("quit"); // lol
-    }
-#endif
 }
 static void update()
 {
@@ -117,6 +112,7 @@ static void update()
         {
             if (int(autojoin_class) < 10)
                 g_IEngine->ExecuteClientCmd(format("join_class ", classnames[int(autojoin_class) - 1]).c_str());
+                hack::command_stack().push("menuclosed");
         }
     }
 }

@@ -126,10 +126,10 @@ std::string GetNamestealName(CSteamID steam_id)
 
             if (stolen_name != "")
                 // Return the name that has changed from the func above
-                return format(stolen_name, glitchy_newlines ? "\n\n\n" : "\u202c");
+                return format(stolen_name, glitchy_newlines ? "\n\n\n" : "\u2063");
         }
         else if (stolen_name != "")
-            return format(stolen_name, glitchy_newlines ? "\n\n\n" : "\u202c");
+            return format(stolen_name, glitchy_newlines ? "\n\n\n" : "\u2063");
     }
 
 #if ENABLE_IPC

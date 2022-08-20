@@ -367,6 +367,7 @@ void StoreClientData()
     user_data_s &data = peer->memory->peer_user_data[peer->client_id];
     data.friendid     = g_ISteamUser->GetSteamID().GetAccountID();
     data.ts_injected  = time_injected;
+    data.textmode     = ENABLE_TEXTMODE;
     if (g_ISteamUser)
     {
         strncpy(data.name, GetNamestealName(g_ISteamUser->GetSteamID()).c_str(), sizeof(data.name));
@@ -386,7 +387,9 @@ void UpdatePlayerlist()
         for (unsigned i = 0; i < cat_ipc::max_peers; i++)
         {
             if (!peer->memory->peer_data[i].free)
-                playerlist::ChangeState(peer->memory->peer_user_data[i].friendid, playerlist::k_EState::IPC);
+            {
+                playerlist::ChangeState(peer->memory->peer_user_data[i].friendid, peer->memory->peer_user_data[i].textmode ? playerlist::k_EState::TEXTMODE : playerlist::k_EState::IPC);
+            }
         }
     }
 }

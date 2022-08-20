@@ -31,6 +31,7 @@ set(files "${CMAKE_CURRENT_LIST_DIR}/angles.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/MiscTemporary.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/navparser.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/nospread.cpp"
+        "${CMAKE_CURRENT_LIST_DIR}/nullnexus.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/PlayerTools.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/SetupBonesReconst.cpp")
 

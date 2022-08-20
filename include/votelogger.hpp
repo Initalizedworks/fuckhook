@@ -14,5 +14,5 @@ namespace votelogger
 {
 
 void dispatchUserMessage(bf_read &buffer, int type);
-void onShutdown(std::string message);
+void Reset();
 } // namespace votelogger

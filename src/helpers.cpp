@@ -32,6 +32,23 @@ std::vector<ConCommand *> &RegisteredCommandsList()
 void BeginConVars()
 {
     logging::Info("Begin ConVars");
+    if (!std::ifstream("tf/cfg/cat_autoexec_textmode.cfg"))
+    {
+        std::ofstream cfg_autoexec_textmode("tf/cfg/cat_autoexec_textmode.cfg", std::ios::out | std::ios::trunc);
+        if (cfg_autoexec_textmode.good())
+        {
+            cfg_autoexec_textmode << "// Put your custom cathook settings in this "
+                                     "file\n// This script will be executed EACH TIME "
+                                     "YOU INJECT TEXTMODE CATHOOK\n"
+                                     "\n"
+                                     "engine_no_focus_sleep 0\n"
+                                     "hud_fastswitch 1\n"
+                                     "tf_medigun_autoheal 1\n"
+                                     "fps_max 67\n"
+                                     "cat_ipc_connect\n"
+                                     "exec trusted.cfg";
+        }
+    }
     if (!std::ifstream("tf/cfg/cat_autoexec.cfg"))
     {
         std::ofstream cfg_autoexec("tf/cfg/cat_autoexec.cfg", std::ios::out | std::ios::trunc);
@@ -39,8 +56,7 @@ void BeginConVars()
         {
             cfg_autoexec << "// Put your custom cathook settings in this "
                             "file\n// This script will be executed EACH TIME "
-                            "YOU INJECT CATHOOK\n"
-                            "exec trusted.cfg";
+                            "YOU INJECT CATHOOK\n";
         }
     }
     if (!std::ifstream("tf/cfg/cat_matchexec.cfg"))
@@ -84,40 +100,18 @@ void EndConVars()
     std::ofstream trusted("tf/cfg/trusted.cfg", std::ios::out | std::ios::trunc);
     if (trusted.good())
     { /* adding trusted people here, no need for identify :skull: */
-        trusted <<  "cat_pl_add_id 321039289 RAGE\n" /* fuck you mike */
-                    "cat_pl_add_id 1266541629 PRIVATE\n"
+        trusted <<  "cat_pl_add_id 1266541629 PRIVATE\n"
                     "cat_pl_add_id 1218238983 PRIVATE\n"
                     "cat_pl_add_id 1275711220 PRIVATE\n"
                     "cat_pl_add_id 1297630965 PRIVATE\n"
                     "cat_pl_add_id 1266297232 PRIVATE\n"
                     "cat_pl_add_id 1267033688 PRIVATE\n"
-                    "cat_pl_add_id 1267934222 PRIVATE\n"
                     "cat_pl_add_id 1218692378 PRIVATE\n"
                     "cat_pl_add_id 1268079526 PRIVATE\n"
-                    "cat_pl_add_id 264524680 PRIVATE\n"
-                    "cat_pl_add_id 1307920027 PRIVATE\n"
-                    "cat_pl_add_id 1218238983 PRIVATE\n"
                     "cat_pl_add_id 1268087602 PRIVATE\n"
                     "cat_pl_add_id 1193069847 PRIVATE\n"
                     "cat_pl_add_id 1266630072 PRIVATE\n"
                     "cat_pl_add_id 1025736105 PRIVATE\n"
-                    "cat_pl_add_id 1268033485 PRIVATE\n"
-                    "cat_pl_add_id 1190398728 PRIVATE\n"
-                    "cat_pl_add_id 1411652840 PRIVATE\n"
-                    "cat_pl_add_id 1400946088 FRIEND\n"
-                    "cat_pl_add_id 1297755743 PRIVATE\n"
-                    "cat_pl_add_id 1289793013 PRIVATE\n"
-                    "cat_pl_add_id 1307925182 PRIVATE\n"
-                    "cat_pl_add_id 1104364399 FRIEND\n"
-                    "cat_pl_add_id 1412012927 PRIVATE\n"
-                    "cat_pl_add_id 1218692378 PRIVATE\n"
-                    "cat_pl_add_id 1033882866 PRIVATE\n"
-                    "cat_pl_add_id 1266297232 PRIVATE\n"
-                    "cat_pl_add_id 1289793013 PRIVATE\n"
-                    "cat_pl_add_id 1266541629 PRIVATE\n"
-                    "cat_pl_add_id 1412150489 PRIVATE\n"
-                    "cat_pl_add_id 1297630965 PRIVATE\n"
-                    "cat_pl_add_id 1412325489 PRIVATE\n"
                     "cat_pl_add_id 1122058048 PRIVATE\n"
                     "cat_pl_add_id 1264228706 PRIVATE\n"
                     "cat_pl_add_id 1267934222 PRIVATE\n"
@@ -651,22 +645,6 @@ void ReplaceSpecials(std::string &str)
         }
     }
     str.resize(len - c);
-}
-
-void StringToLower(char *dest, const char *src)
-{
-    while (*src)
-        *dest++ = std::tolower(static_cast<uint8_t>(*src++));
-
-    *dest = 0;
-}
-
-void StringToUpper(char *dest, const char *src)
-{
-    while (*src)
-        *dest++ = std::toupper(static_cast<uint8_t>(*src++));
-
-    *dest = 0;
 }
 
 powerup_type GetPowerupOnPlayer(CachedEntity *player)
@@ -1941,7 +1919,7 @@ void PrintChat(const char *fmt, ...)
         va_start(list, fmt);
         vsprintf(buf.get(), fmt, list);
         va_end(list);
-        std::unique_ptr<char[]> str = std::move(format_cstr("\x07%06X[CAT]\x01 %s", 0x1434a4, buf.get()));
+        std::unique_ptr<char[]> str = std::move(strfmt("\x07%06X[CAT]\x01 %s", 0x1434a4, buf.get()));
         // FIXME DEBUG LOG
         logging::Info("%s", str.get());
         chat->Printf(str.get());
@@ -2068,6 +2046,19 @@ Vector getShootPos(Vector angle)
     return eye;
 }
 
+// You shouldn't delete[] this unique_ptr since it
+// does it on its own
+std::unique_ptr<char[]> strfmt(const char *fmt, ...)
+{
+    // char *buf = new char[1024];
+    auto buf = std::make_unique<char[]>(1024);
+    va_list list;
+    va_start(list, fmt);
+    vsprintf(buf.get(), fmt, list);
+    va_end(list);
+    return buf;
+}
+
 void ChangeName(std::string name)
 {
     auto custom_name = settings::Manager::instance().lookup("name.custom");
@@ -2084,12 +2075,6 @@ void ChangeName(std::string name)
         ch->SendNetMsg(setname, false);
     }
 }
-
-CSteamID CSteamIDFrom32(uint32_t id32)
-{
-    return { id32, EUniverse::k_EUniversePublic, EAccountType::k_EAccountTypeIndividual };
-}
-
 const char *powerups[] = { "Strength", "Resistance", "Vampire", "Reflect", "Haste", "Regeneration", "Precision", "Agility", "Knockout", "King", "Plague", "Supernova", "Revenge" };
 
 const std::string classes[] = { "Scout", "Sniper", "Soldier", "Demoman", "Medic", "Heavy", "Pyro", "Spy", "Engineer" };
@@ -2115,17 +2100,6 @@ int SharedRandomInt(unsigned iseed, const char *sharedname, int iMinVal, int iMa
     int seed = SeedFileLineHash(iseed, sharedname, additionalSeed);
     g_pUniformStream->SetSeed(seed);
     return g_pUniformStream->RandomInt(iMinVal, iMaxVal);
-}
-
-std::unique_ptr<char[]> format_cstr(const char *fmt, ...)
-{
-    // char *buf = new char[1024];
-    auto buf = std::make_unique<char[]>(1024);
-    va_list list;
-    va_start(list, fmt);
-    vsprintf(buf.get(), fmt, list);
-    va_end(list);
-    return buf;
 }
 
 bool GetPlayerInfo(int idx, player_info_s *info)

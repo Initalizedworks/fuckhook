@@ -51,7 +51,5 @@ struct bot_class_config
     float preferred;
     float max;
 };
-extern bool isVisible;
-std::pair<CachedEntity *, float> getNearestPlayerDistance();
 } // namespace hacks::NavBot
 

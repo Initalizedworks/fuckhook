@@ -61,7 +61,7 @@ DECLARE_HOOKED_METHOD(FireEventClientSide, bool, IGameEventManager2 *, IGameEven
 // g_IEngine
 DECLARE_HOOKED_METHOD(IsPlayingTimeDemo, bool, void *);
 DECLARE_HOOKED_METHOD(ServerCmdKeyValues, void, IVEngineClient013 *, KeyValues *);
-#if ENABLE_VISUALS || ENABLE_NULL_GRAPHICS
+#if ENABLE_VISUALS || ENABLE_TEXTMODE
 // vgui::IPanel
 DECLARE_HOOKED_METHOD(PaintTraverse, void, vgui::IPanel *, unsigned int, bool, bool);
 #endif
@@ -83,7 +83,7 @@ DECLARE_HOOKED_METHOD(SDL_PollEvent, int, SDL_Event *);
 DECLARE_HOOKED_METHOD(SDL_SetClipboardText, int, const char *);
 #endif
 #endif
-#if ENABLE_VISUALS || ENABLE_NULL_GRAPHICS
+#if ENABLE_VISUALS || ENABLE_TEXTMODE
 DECLARE_HOOKED_METHOD(DrawModelExecute, void, IVModelRender *, const DrawModelState_t &, const ModelRenderInfo_t &, matrix3x4_t *);
 #endif
 // CTFPlayerInventory
@@ -96,15 +96,12 @@ DECLARE_HOOKED_METHOD(EmitSound3, void, void *, IRecipientFilter &, int, int, in
 DECLARE_HOOKED_METHOD(RunCommand, void, IPrediction *, IClientEntity *, CUserCmd *, IMoveHelper *);
 // g_IToolFramework
 DECLARE_HOOKED_METHOD(Think, void, IToolFrameworkInternal *, bool);
-// CTFMinigun and CTFFlameThrower
-DECLARE_HOOKED_METHOD(CalcIsAttackCriticalHelper_brokenweps, bool, IClientEntity *);
 } // namespace hooked_methods
 
 // TODO
 // wontfix.club
 #if 0
 
-#if ENABLE_NULL_GRAPHICS
 typedef ITexture *(*FindTexture_t)(void *, const char *, const char *, bool,
                                    int);
 typedef IMaterial *(*FindMaterialEx_t)(void *, const char *, const char *, int,
@@ -130,6 +127,5 @@ typedef IMaterial *(*FindMaterial_t)(void *, const char *, const char *, bool,
                                               const char *pTextureGroupName,
                                               int nContext, bool complain,
                                               const char *pComplainPrefix);
-#endif
 
 #endif

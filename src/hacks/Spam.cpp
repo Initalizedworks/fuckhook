@@ -170,7 +170,22 @@ bool SubstituteQueries(std::string &input)
     }
     return true;
 }
-/* farewell, newlines ): */
+
+void SubstituteLines(std::string &input)
+{
+    size_t index = input.find("%lines%");
+    if (index != std::string::npos)
+    {
+        int len      = input.length() - 7;
+        int leftover = 127 - len;
+
+        std::string replace;
+        while (replace.length() < leftover)
+            replace += "\n";
+
+        ReplaceString(input, "%lines%", replace);
+    }
+}
 
 bool FormatSpamMessage(std::string &message)
 {
@@ -181,8 +196,17 @@ bool FormatSpamMessage(std::string &message)
         ReplaceString(message, "%myteam%", teams[team]);
         ReplaceString(message, "%enemyteam%", teams[enemy_team]);
     }
-    return SubstituteQueries(message);
+    if (!SubstituteQueries(message))
+        return false;
+    SubstituteLines(message); /* Last so we always add perfect amount of newlines */
+    return true;
 }
+
+CatCommand say_lines("say_lines", "Say with newlines (\\n)", [](const CCommand &args) {
+    std::string message = "%lines%" + std::string(args.ArgS());
+    SubstituteLines(message);
+    chat_stack::Say(message);
+});
 
 void createMove()
 {
@@ -270,9 +294,22 @@ void createMove()
 
     if (!spam_source)
         return;
+    static int safety_ticks = 0;
     static int last_source  = 0;
     if (*spam_source != last_source)
+    {
+        safety_ticks = 300;
         last_source  = *spam_source;
+    }
+    if (safety_ticks > 0)
+    {
+        safety_ticks--;
+        return;
+    }
+    else
+    {
+        safety_ticks = 0;
+    }
 
     const std::vector<std::string> *source = nullptr;
     switch (*spam_source)
@@ -287,16 +324,16 @@ void createMove()
         source = &builtin_lennyfaces;
         break;
     case 4:
-        source = &builtin_nonecore;
+        source = &builtin_blanks;
         break;
     case 5:
-        source = &builtin_lmaobox;
+        source = &builtin_nonecore;
         break;
     case 6:
-        source = &builtin_lithium;
+        source = &builtin_lmaobox;
         break;
     case 7:
-        source = &builtin_pazer;
+        source = &builtin_lithium;
         break;
     default:
         return;
@@ -346,11 +383,11 @@ void init()
 
 const std::vector<std::string> builtin_default    = { "Cathook - more fun than a ball of yarn!", "GNU/Linux is the best OS!", "Visit https://github.com/nullworks/cathook for more information!", "Cathook - Free and Open-Source tf2 cheat!", "Cathook - ca(n)t stop me meow!" };
 const std::vector<std::string> builtin_lennyfaces = { "( ͡° ͜ʖ ͡°)", "( ͡°( ͡° ͜ʖ( ͡° ͜ʖ ͡°)ʖ ͡°) ͡°)", "ʕ•ᴥ•ʔ", "(▀̿Ĺ̯▀̿ ̿)", "( ͡°╭͜ʖ╮͡° )", "(ง'̀-'́)ง", "(◕‿◕✿)", "༼ つ  ͡° ͜ʖ ͡° ༽つ" };
+const std::vector<std::string> builtin_blanks     = { "%lines%" };
 
 const std::vector<std::string> builtin_nonecore = { "NULL CORE - REDUCE YOUR RISK OF BEING OWNED!", "NULL CORE - WAY TO THE TOP!", "NULL CORE - BEST TF2 CHEAT!", "NULL CORE - NOW WITH BLACKJACK AND HOOKERS!", "NULL CORE - BUTTHURT IN 10 SECONDS FLAT!", "NULL CORE - WHOLE SERVER OBSERVING!", "NULL CORE - GET BACK TO PWNING!", "NULL CORE - WHEN PVP IS TOO HARDCORE!", "NULL CORE - CAN CAUSE KIDS TO RAGE!", "NULL CORE - F2P NOOBS WILL BE 100% NERFED!" };
 const std::vector<std::string> builtin_lmaobox  = { "GET GOOD, GET LMAOBOX!", "LMAOBOX - WAY TO THE TOP", "WWW.LMAOBOX.NET - BEST FREE TF2 HACK!" };
 const std::vector<std::string> builtin_lithium  = { "CHECK OUT www.YouTube.com/c/DurRud FOR MORE INFORMATION!", "PWNING AIMBOTS WITH OP ANTI-AIMS SINCE 2015 - LITHIUMCHEAT", "STOP GETTING MAD AND STABILIZE YOUR MOOD WITH LITHIUMCHEAT!", "SAVE YOUR MONEY AND GET LITHIUMCHEAT! IT IS FREE!", "GOT ROLLED BY LITHIUM? HEY, THAT MEANS IT'S TIME TO GET LITHIUMCHEAT!!" };
-const std::vector<std::string> builtin_pazer    = { "Attention! There is a cheater on the other team named '%query:'. Please kick them!" };
 
 static InitRoutine EC(
     []()

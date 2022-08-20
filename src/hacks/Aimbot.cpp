@@ -383,6 +383,8 @@ static void CreateMove()
         return;
     }
 
+    if (CE_INT(LOCAL_W, netvar.m_iClip1) == 0)
+        return;
     doAutoZoom(false);
     CachedEntity *target_entity = target_last = RetrieveBestTarget(aimkey_status);
     bool should_backtrack = hacks::backtrack::backtrackEnabled();
@@ -400,14 +402,12 @@ static void CreateMove()
                     int weapon_case = LOCAL_W->m_iClassID();
                     doAutoZoom(true);
                     /* very much simple ""fix"" for the aimbot death stare */
-                    if (g_pLocalPlayer->holding_sniper_rifle && g_pLocalPlayer->bZoomed && CE_GOOD(LOCAL_W) && re::C_BaseCombatWeapon::GetSlot(RAW_ENT(LOCAL_W)) + 1 != 3)
+                    if (g_pLocalPlayer->holding_sniper_rifle && g_pLocalPlayer->bZoomed)
                         Aim(target_entity);
                     else if (!g_pLocalPlayer->holding_sniper_rifle)
                         Aim(target_entity);
 
                     if(!hitscan_special_cases(target_entity, weapon_case))
-                        DoAutoshoot();
-                    else if (hitscan_special_cases(target_entity, weapon_case) && (CE_INT(LOCAL_W, netvar.m_iClip1) == 0))
                         DoAutoshoot();
             }
         break;

@@ -448,7 +448,6 @@ bool DispatchUserMessage(bf_read *buf, int type)
     buf->Seek(0);
 
     std::vector<std::string> lines;
-    /* Boost here */
     boost::split(lines, msg_str, boost::is_any_of("\n"), boost::token_compress_on);
 
     // Regex to find the playerperf data we want/need

@@ -53,7 +53,6 @@ struct StrafePredictionData
 };
 
 // StrafePredictionData strafepred_data;
-/* Boost here */
 static std::array<boost::circular_buffer<Vector>, MAX_PLAYERS> previous_positions;
 static ConVar *sv_gravity = nullptr;
 
@@ -723,9 +722,7 @@ float DistanceToGround(Vector origin)
 static InitRoutine init(
     []()
     {
-        /* Boost here */
         previous_positions.fill(boost::circular_buffer<Vector>(*sample_size));
-        /* Boost here */
         sample_size.installChangeCallback([](settings::VariableBase<int> &, int after) { previous_positions.fill(boost::circular_buffer<Vector>(after)); });
         EC::Register(
             EC::CreateMove,

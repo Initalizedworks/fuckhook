@@ -89,6 +89,14 @@ DEFINE_HOOKED_METHOD(ChatPrintf, void, CHudBaseChat *_this, int player_idx, int 
             }
         }
     }
+    if (*clean_chat && isHackActive())
+    {
+        std::string result = buf.get();
+
+        ReplaceString(result, "\n", "");
+        ReplaceString(result, "\r", "");
+        return original::ChatPrintf(_this, player_idx, iFilter, "%s", result.c_str());
+    }
     return original::ChatPrintf(_this, player_idx, iFilter, "%s", buf.get());
 }
 static InitRoutine initlevlinit(

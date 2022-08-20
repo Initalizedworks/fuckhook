@@ -10,53 +10,144 @@
 #include "common.hpp"
 #include "hack.hpp"
 #include "PlayerTools.hpp"
-#include "MiscTemporary.hpp"
-
-static settings::Boolean auto_disguise{ "misc.autodisguise", "false" };
-
-static settings::Boolean abandon_if{ "cat-bot.abandon-if.enable", "false" };
-
-static settings::Int abandon_if_bots_gte{ "cat-bot.abandon-if.bots-gte", "0" };
-static settings::Int abandon_if_ipc_bots_gte{ "cat-bot.abandon-if.ipc-bots-gte", "0" };
-static settings::Int abandon_if_humans_lte{ "cat-bot.abandon-if.humans-lte", "0" };
-static settings::Int requeue_if_humans_lte{ "cat-bot.requeue-if.humans-lte", "0" };
-static settings::Int abandon_if_players_lte{ "cat-bot.abandon-if.players-lte", "0" };
-static settings::Int abandon_if_team_lte{ "cat-bot.abandon-if.team-lte", "0" };
-static settings::Int abandon_if_timer{ "cat-bot.abandon-if.hour.timer", "1" };
-#if ENABLE_TEXTMODE
-  static settings::Boolean abandon_if_hour{"cat-bot.abandon-if.hour", "true"};
-#elif ENABLE_IPC
-  static settings::Boolean abandon_if_hour{"cat-bot.abandon-if.hour", "false"};
-#endif
-
-static settings::Boolean micspam{ "cat-bot.micspam.enable", "false" };
-static settings::Int micspam_on{ "cat-bot.micspam.interval-on", "1" };
-static settings::Int micspam_off{ "cat-bot.micspam.interval-off", "0" };
-
-static settings::Boolean auto_crouch{ "cat-bot.auto-crouch", "false" };
-static settings::Boolean always_crouch{ "cat-bot.always-crouch", "false" };
-static settings::Boolean autovote_map{ "cat-bot.autovote-map", "true" };
+#include "e8call.hpp"
+#include "navparser.hpp"
+#include "SettingCommands.hpp"
+#include "glob.h"
 
 namespace hacks::catbot
 {
+
+static settings::Boolean micspam{ "cat-bot.micspam.enable", "false" };
+static settings::Int micspam_on{ "cat-bot.micspam.interval-on", "3" };
+static settings::Int micspam_off{ "cat-bot.micspam.interval-off", "60" };
+
+static settings::Boolean random_votekicks{ "cat-bot.votekicks", "false" };
+static settings::Boolean autovote_map{ "cat-bot.autovote-map", "true" };
+
 settings::Boolean catbotmode{ "cat-bot.enable", "true" };
 settings::Boolean anti_motd{ "cat-bot.anti-motd", "false" };
 
-static Timer timer_catbot_list{};
+struct catbot_user_state
+{
+    int treacherous_kills{ 0 };
+};
+
+static std::unordered_map<unsigned, catbot_user_state> human_detecting_map{};
+
+int globerr(const char *path, int eerrno)
+{
+    logging::Info("%s: %s\n", path, strerror(eerrno));
+    // let glob() keep going
+    return 0;
+}
+
+static std::string blacklist;
+
+void do_random_votekick()
+{
+    std::vector<int> targets;
+    player_info_s local_info;
+
+    if (CE_BAD(LOCAL_E) || !GetPlayerInfo(LOCAL_E->m_IDX, &local_info))
+        return;
+    for (int i = 1; i < g_GlobalVars->maxClients; ++i)
+    {
+        player_info_s info;
+        if (!GetPlayerInfo(i, &info) || !info.friendsID)
+            continue;
+        if (g_pPlayerResource->GetTeam(i) != g_pLocalPlayer->team)
+            continue;
+        if (info.friendsID == local_info.friendsID)
+            continue;
+        if (!player_tools::shouldTargetSteamId(info.friendsID))
+            continue;
+
+        targets.push_back(info.userID);
+    }
+
+    if (targets.empty())
+        return;
+
+    int target = targets[rand() % targets.size()];
+    player_info_s info;
+    if (!GetPlayerInfo(GetPlayerForUserID(target), &info))
+        return;
+    hack::ExecuteCommand("callvote kick \"" + std::to_string(target) + " cheating\"");
+}
+
+// Store information
+struct Posinfo
+{
+    float x;
+    float y;
+    float z;
+    std::string lvlname;
+    Posinfo(float _x, float _y, float _z, std::string _lvlname)
+    {
+        x       = _x;
+        y       = _y;
+        z       = _z;
+        lvlname = _lvlname;
+    }
+    Posinfo(){};
+};
+
+void SendNetMsg(INetMessage &msg)
+{
+
+}
+
+class CatBotEventListener2 : public IGameEventListener2
+{
+    void FireGameEvent(IGameEvent *) override
+    {
+        // vote for current map if catbot mode and autovote is on
+        if (catbotmode && autovote_map)
+            g_IEngine->ServerCmd("next_map_vote 0");
+    }
+};
+
+CatBotEventListener2 &listener2()
+{
+    static CatBotEventListener2 object{};
+    return object;
+}
+
+Timer timer_votekicks{};
 static Timer timer_abandon{};
+static Timer timer_catbot_list{};
+
+static int count_ipc = 0;
+static std::vector<unsigned> ipc_list{ 0 };
+
+static bool waiting_for_quit_bool{ false };
+static Timer waiting_for_quit_timer{};
+
+static std::vector<unsigned> ipc_blacklist{};
+#if ENABLE_IPC
+void update_ipc_data(ipc::user_data_s &data)
+{
+    data.ingame.bot_count = count_ipc;
+}
+#endif
 
 Timer level_init_timer{};
-Timer micspam_on_timer{}, micspam_off_timer{};
+Timer micspam_on_timer{};
+Timer micspam_off_timer{};
 
-CatCommand print_ammo("debug_print_ammo", "debug", []() {
-    if (CE_BAD(LOCAL_E) || !LOCAL_E->m_bAlivePlayer() || CE_BAD(LOCAL_W))
-        return;
-    logging::Info("Current slot: %d", re::C_BaseCombatWeapon::GetSlot(RAW_ENT(LOCAL_W)));
-    for (int i = 0; i < 10; i++)
-        logging::Info("Ammo Table %d: %d", i, CE_INT(LOCAL_E, netvar.m_iAmmo + i * 4));
-});
 
+CatCommand print_ammo("debug_print_ammo", "debug",
+                      []()
+                      {
+                          if (CE_BAD(LOCAL_E) || !LOCAL_E->m_bAlivePlayer() || CE_BAD(LOCAL_W))
+                              return;
+                          logging::Info("Current slot: %d", re::C_BaseCombatWeapon::GetSlot(RAW_ENT(LOCAL_W)));
+                          for (int i = 0; i < 10; i++)
+                              logging::Info("Ammo Table %d: %d", i, CE_INT(LOCAL_E, netvar.m_iAmmo + i * 4));
+                      });
 static Timer disguise{};
+static Timer report_timer{};
 static std::string health = "Health: 0/0";
 static std::string ammo   = "Ammo: 0/0";
 static int max_ammo;
@@ -89,63 +180,23 @@ static void cm()
     if (CE_BAD(LOCAL_E) || CE_BAD(LOCAL_W))
         return;
 
-    static const int classes[3]{ tf_spy, tf_sniper, tf_pyro };
-    if (*auto_disguise && g_pPlayerResource->GetClass(LOCAL_E) == tf_spy && !IsPlayerDisguised(LOCAL_E) && disguise.test_and_set(3000))
-    {
-        int teamtodisguise = (LOCAL_E->m_iTeam() == TEAM_RED) ? TEAM_RED - 1 : TEAM_BLU - 1;
-        int classtojoin    = classes[rand() % 3];
-        g_IEngine->ClientCmd_Unrestricted(format("disguise ", classtojoin, " ", teamtodisguise).c_str());
-    }
 }
 
-int count_ipc{ 0 };
-static std::vector<unsigned> ipc_list{ 0 };
-static std::vector<unsigned> ipc_blacklist{};
-
-static bool waiting_for_quit_bool{ false };
-static Timer waiting_for_quit_timer{};
-
-#if ENABLE_IPC
-void update_ipc_data(ipc::user_data_s &data)
-{
-    data.ingame.bot_count = count_ipc;
-}
-static Timer abandon_unix_timestamps{};
-  static void Paint() {
-    if (abandon_if && abandon_if_hour && ipc::peer) {
-      if (abandon_unix_timestamps.test_and_set(30000)) {
-        int diff = time(nullptr) - ipc::peer->memory->peer_user_data[ipc::peer->client_id].ts_connected;
-
-        if (diff >= *abandon_if_timer * 60^2) {
-          logging::Info("We have been in a match for too long! abandoning");
-
-          tfmm::abandon();
-          g_IEngine->ClientCmd_Unrestricted("killserver;disconnect");
-        }
-      }
-    }
-  }
-#endif
-
+static Timer unstuck{};
+static int unstucks;
 void update()
 {
     if (!catbotmode)
         return;
 
-    if (g_Settings.bInvalid)
-        return;
-
     if (CE_BAD(LOCAL_E))
         return;
 
-#if ENABLE_NULL_GRAPHICS
-    static Timer unstuck{};
     if (LOCAL_E->m_bAlivePlayer())
+    {
         unstuck.update();
-    if (unstuck.test_and_set(10000))
-        hack::command_stack().push("menuclosed");
-#endif
-
+        unstucks = 0;
+    }
     if (micspam)
     {
         if (micspam_on && micspam_on_timer.test_and_set(*micspam_on * 1000))
@@ -154,199 +205,51 @@ void update()
             g_IEngine->ClientCmd_Unrestricted("-voicerecord");
     }
 
-    if (abandon_if && timer_abandon.test_and_set(2000) && level_init_timer.check(13000))
+    if (random_votekicks && timer_votekicks.test_and_set(5000))
+        do_random_votekick();
+    if (timer_abandon.test_and_set(2000) && level_init_timer.check(13000))
     {
         count_ipc = 0;
         ipc_list.clear();
         int count_total = 0;
-        int count_team  = 0;
-        int count_bot   = 0;
 
-        auto lobby = CTFLobbyShared::GetLobby();
-        if (!lobby)
-            return;
-
-        CTFLobbyPlayer *player;
-        CTFLobbyPlayer *local_player = lobby->GetPlayer(lobby->GetMemberIndexBySteamID(g_ISteamUser->GetSteamID()));
-        if (!local_player)
-            return;
-
-        int i, members, local_team;
-        local_team = local_player->GetTeam();
-
-        members = lobby->GetNumMembers();
-        for (i = 0; i < members; ++i)
+        for (int i = 1; i <= g_IEngine->GetMaxClients(); ++i)
         {
-            player = lobby->GetPlayer(i);
-            if (!player)
-                continue;
-            int team  = player->GetTeam();
-            uint32 id = player->GetID().GetAccountID();
-
-            ++count_total;
-            if (team == local_team)
-                count_team++;
-
-            auto &pl   = playerlist::AccessData(id);
-            auto state = pl.state;
-
-            if (state == playerlist::k_EState::CAT || state == playerlist::k_EState::PAZER || state == playerlist::k_EState::PARTY)
-                count_bot++;
-            if (state == playerlist::k_EState::IPC)
-            {
-                ipc_list.push_back(id);
-                count_ipc++;
-                count_bot++;
-            }
-        }
-
-        if (abandon_if_ipc_bots_gte)
-        {
-            if (count_ipc >= int(abandon_if_ipc_bots_gte))
-            {
-                // Store local IPC Id and assign to the quit_id variable for later
-                // comparisions
-                unsigned local_ipcid = ipc::peer->client_id;
-                unsigned quit_id     = local_ipcid;
-
-                // Iterate all the players marked as bot
-                for (auto &id : ipc_list)
-                {
-                    // We already know we shouldn't quit, so just break out of the loop
-                    if (quit_id < local_ipcid)
-                        break;
-
-                    // Reduce code size
-                    auto &peer_mem = ipc::peer->memory;
-
-                    // Iterate all ipc peers
-                    for (unsigned i = 0; i < cat_ipc::max_peers; i++)
-                    {
-                        // If that ipc peer is alive and in has the steamid of that player
-                        if (!peer_mem->peer_data[i].free && peer_mem->peer_user_data[i].friendid == id)
-                        {
-                            // Check against blacklist
-                            if (std::find(ipc_blacklist.begin(), ipc_blacklist.end(), i) != ipc_blacklist.end())
-                                continue;
-
-                            // Found someone with a lower ipc id
-                            if (i < local_ipcid)
-                            {
-                                quit_id = i;
-                                break;
-                            }
-                        }
-                    }
-                }
-                // Only quit if you are the player with the lowest ipc id
-                if (quit_id == local_ipcid)
-                {
-                    // Clear blacklist related stuff
-                    waiting_for_quit_bool = false;
-                    ipc_blacklist.clear();
-                    if (abandon_if_ipc_bots_gte)
-                    {
-                        logging::Info("Abandoning because there are %d local players "
-                                      "in game, and abandon_if_ipc_bots_gte is %d.",
-                                      count_ipc, int(abandon_if_ipc_bots_gte));
-                        tfmm::abandon();
-                    }
-                    return;
-                }
-                else
-                {
-                    if (!waiting_for_quit_bool)
-                    {
-                        // Waiting for that ipc id to quit, we use this timer in order to
-                        // blacklist ipc peers which refuse to quit for some reason
-                        waiting_for_quit_bool = true;
-                        waiting_for_quit_timer.update();
-                    }
-                    else
-                    {
-                        // IPC peer isn't leaving, blacklist for now
-                        if (waiting_for_quit_timer.test_and_set(10000))
-                        {
-                            ipc_blacklist.push_back(quit_id);
-                            waiting_for_quit_bool = false;
-                        }
-                    }
-                }
-            }
+            if (g_IEntityList->GetClientEntity(i))
+                ++count_total;
             else
+                continue;
+
+            player_info_s info{};
+            if (!GetPlayerInfo(i, &info))
+                continue;
+            if (playerlist::AccessData(info.friendsID).state == playerlist::k_EState::CAT)
+                --count_total;
+
+            if (playerlist::AccessData(info.friendsID).state == playerlist::k_EState::IPC || playerlist::AccessData(info.friendsID).state == playerlist::k_EState::TEXTMODE)
             {
-                // Reset Bool because no reason to quit
-                waiting_for_quit_bool = false;
-                ipc_blacklist.clear();
-            }
-        }
-        if (abandon_if_humans_lte)
-        {
-            if (count_total - count_bot <= int(abandon_if_humans_lte))
-            {
-                tfmm::abandon();
-                logging::Info("Abandoning because there are %d non-bots in "
-                                "game, and abandon_if_humans_lte is %d.",
-                                count_total - count_bot, int(abandon_if_humans_lte));
-                return;
-            }
-        }
-        /* Check this so we don't spam logs */
-        re::CTFGCClientSystem *gc = re::CTFGCClientSystem::GTFGCClientSystem();
-        re::CTFPartyClient *pc    = re::CTFPartyClient::GTFPartyClient();
-        if (requeue_if_humans_lte && gc && gc->BConnectedToMatchServer(true) && gc->BHaveLiveMatch())
-        {
-            if (pc && !(pc->BInQueueForMatchGroup(tfmm::getQueue()) || pc->BInQueueForStandby()))
-            {
-                if (count_total - count_bot <= int(requeue_if_humans_lte))
-                {
-                    tfmm::startQueue();
-                    logging::Info("Requeuing because there are %d non-bots in "
-                                    "game, and requeue_if_humans_lte is %d.",
-                                    count_total - count_bot, int(requeue_if_humans_lte));
-                    return;
-                }
-            }
-        } 
-        if (abandon_if_players_lte)
-        {
-            if (count_total <= int(abandon_if_players_lte))
-            {
-                logging::Info("Abandoning because there are %d total players "
-                                "in game, and abandon_if_players_lte is %d.",
-                                count_total, int(abandon_if_players_lte));
-                tfmm::abandon();
-                return;
-            }
-        }
-        if (abandon_if_bots_gte)
-        {
-            if (count_bot >= int(abandon_if_bots_gte))
-            {
-                logging::Info("Abandoning because there are %d total bots "
-                                "in game, and abandon_if_bots_gte is %d.",
-                                count_total, int(abandon_if_players_lte));
-                tfmm::abandon();
-                return;
-            }
-        }
-        if (abandon_if_team_lte)
-        {
-            if (count_team <= int(abandon_if_team_lte))
-            {
-                logging::Info("Abandoning because there are %d total teammates "
-                                "in game, and abandon_if_team_lte is %d.",
-                                count_team, int(abandon_if_team_lte));
-                    tfmm::abandon();
-                return;
+                ipc_list.push_back(info.friendsID);
+                ++count_ipc;
             }
         }
     }
 }
 
+void init()
+{
+    // g_IEventManager2->AddListener(&listener(), "player_death", false);
+    g_IEventManager2->AddListener(&listener2(), "vote_maps_changed", false);
+}
+
 void level_init()
 {
     level_init_timer.update();
+}
+
+void shutdown()
+{
+    // g_IEventManager2->RemoveListener(&listener());
+    g_IEventManager2->RemoveListener(&listener2());
 }
 
 #if ENABLE_VISUALS
@@ -361,28 +264,16 @@ static void draw()
 }
 #endif
 
-class MapVoteListener : public IGameEventListener2
-{
-    void FireGameEvent(IGameEvent *) override
+static InitRoutine runinit(
+    []()
     {
-        if (catbotmode && autovote_map)
-            g_IEngine->ServerCmd("next_map_vote 0");
-    }
-};
-
-MapVoteListener &listener2()
-{
-    static MapVoteListener object{};
-    return object;
-}
-
-static InitRoutine runinit([]() {
-    EC::Register(EC::CreateMove, cm, "cm_catbot", EC::average);
-    EC::Register(EC::CreateMove, update, "cm2_catbot", EC::average);
-    EC::Register(EC::LevelInit, level_init, "levelinit_catbot", EC::average);
+        EC::Register(EC::CreateMove, cm, "cm_catbot", EC::average);
+        EC::Register(EC::CreateMove, update, "cm2_catbot", EC::average);
+        EC::Register(EC::LevelInit, level_init, "levelinit_catbot", EC::average);
+        EC::Register(EC::Shutdown, shutdown, "shutdown_catbot", EC::average);
 #if ENABLE_VISUALS
-    EC::Register(EC::Draw, draw, "draw_catbot", EC::average);
+        EC::Register(EC::Draw, draw, "draw_catbot", EC::average);
 #endif
-    g_IEventManager2->AddListener(&listener2(), "vote_maps_changed", false);
-});
-} // namespace hacks::shared::catbot
+        init();
+    });
+} // namespace hacks::catbot

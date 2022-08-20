@@ -50,7 +50,7 @@ static inline void CreateMove()
 
 void frameStageNotify(ClientFrameStage_t stage)
 {
-#if !ENABLE_NULL_GRAPHICS
+#if !ENABLE_TEXTMODE
     if (!enable || !g_IEngine->IsInGame())
         return;
     if (stage == FRAME_NET_UPDATE_POSTDATAUPDATE_START)
@@ -262,7 +262,7 @@ static InitRoutine init(
         EC::Register(EC::Shutdown, shutdown, "antiantiaim_shutdown");
         EC::Register(EC::CreateMove, CreateMove, "cm_antiantiaim");
         EC::Register(EC::CreateMoveWarp, CreateMove, "cmw_antiantiaim");
-#if ENABLE_NULL_GRAPHICS
+#if ENABLE_TEXTMODE
         EC::Register(EC::CreateMove, modifyAngles, "cm_textmodeantiantiaim");
         EC::Register(EC::CreateMoveWarp, modifyAngles, "cmw_textmodeantiantiaim");
 #endif

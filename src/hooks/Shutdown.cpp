@@ -48,8 +48,7 @@ DEFINE_HOOKED_METHOD(Shutdown, void, INetChannel *this_, const char *reason)
     if (autoabandon && !ignoredc)
         tfmm::disconnectAndAbandon();
     ignoredc = false;
-    std::string message = reason;
-    votelogger::onShutdown(message);
+    votelogger::Reset();
     if (*random_name)
     {
         if (randomnames_file.TryLoad("names.txt"))

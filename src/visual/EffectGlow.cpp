@@ -124,7 +124,7 @@ CatCommand fix_black_glow("fix_black_glow", "Fix Black Glow",
 
 void EffectGlow::Init()
 {
-
+#if !ENFORCE_STREAM_SAFETY
     if (init)
         return;
     logging::Info("Init Glow...");
@@ -198,6 +198,7 @@ void EffectGlow::Init()
 
     logging::Info("Init done!");
     init = true;
+#endif
 }
 
 void EffectGlow::Shutdown()
@@ -256,7 +257,9 @@ rgba_t EffectGlow::GlowColor(IClientEntity *entity)
 
 bool EffectGlow::ShouldRenderGlow(IClientEntity *entity)
 {
+#if ENFORCE_STREAM_SAFETY
     return false;
+#endif
     static CachedEntity *ent;
     if (entity->entindex() < 0)
         return false;
@@ -315,6 +318,7 @@ bool EffectGlow::ShouldRenderGlow(IClientEntity *entity)
 
 void EffectGlow::BeginRenderGlow()
 {
+#if !ENFORCE_STREAM_SAFETY
     drawing = true;
     CMatRenderContextPtr ptr(GET_RENDER_CONTEXT);
     ptr->ClearColor4ub(0, 0, 0, 0);
@@ -325,19 +329,23 @@ void EffectGlow::BeginRenderGlow()
     ptr->ClearBuffers(true, false);
     mat_unlit_z->AlphaModulate(1.0f);
     ptr->DepthRange(0.0f, 0.01f);
+#endif
 }
 
 void EffectGlow::EndRenderGlow()
 {
+#if !ENFORCE_STREAM_SAFETY
     drawing = false;
     CMatRenderContextPtr ptr(GET_RENDER_CONTEXT);
     ptr->DepthRange(0.0f, 1.0f);
     g_IVModelRender->ForcedMaterialOverride(nullptr);
     ptr->PopRenderTargetAndViewport();
+#endif
 }
 
 void EffectGlow::StartStenciling()
 {
+#if !ENFORCE_STREAM_SAFETY
     static ShaderStencilState_t state;
     state.Reset();
     state.m_bEnable = true;
@@ -365,10 +373,12 @@ void EffectGlow::StartStenciling()
     g_IVRenderView->SetBlend(0.0f);
     mat_unlit->AlphaModulate(1.0f);
     g_IVModelRender->ForcedMaterialOverride(*solid_when ? mat_unlit : mat_unlit_z);
+#endif
 }
 
 void EffectGlow::EndStenciling()
 {
+#if !ENFORCE_STREAM_SAFETY
     static ShaderStencilState_t state;
     state.Reset();
     g_IVModelRender->ForcedMaterialOverride(nullptr);
@@ -376,11 +386,14 @@ void EffectGlow::EndStenciling()
     state.SetStencilState(ptr);
     ptr->DepthRange(0.0f, 1.0f);
     g_IVRenderView->SetBlend(1.0f);
+#endif
 }
 
 void EffectGlow::DrawToStencil(IClientEntity *entity)
 {
+#if !ENFORCE_STREAM_SAFETY
     DrawEntity(entity);
+#endif
 }
 
 void EffectGlow::DrawToBuffer(IClientEntity *entity)
@@ -389,6 +402,7 @@ void EffectGlow::DrawToBuffer(IClientEntity *entity)
 
 void EffectGlow::DrawEntity(IClientEntity *entity)
 {
+#if !ENFORCE_STREAM_SAFETY
     static IClientEntity *attach;
     static int passes;
     passes = 0;
@@ -414,18 +428,22 @@ void EffectGlow::DrawEntity(IClientEntity *entity)
         }
         attach = g_IEntityList->GetClientEntity(*(int *) ((uintptr_t) attach + netvar.m_Collision - 20) & 0xFFF);
     }
+#endif
 }
 
 void EffectGlow::RenderGlow(IClientEntity *entity)
 {
+#if !ENFORCE_STREAM_SAFETY
     CMatRenderContextPtr ptr(GET_RENDER_CONTEXT);
     g_IVRenderView->SetColorModulation(GlowColor(entity));
     g_IVModelRender->ForcedMaterialOverride(mat_unlit_z);
     DrawEntity(entity);
+#endif
 }
 
 void EffectGlow::Render(int x, int y, int w, int h)
 {
+#if !ENFORCE_STREAM_SAFETY
     if (!enable)
         return;
     if (!isHackActive() || g_Settings.bInvalid || disable_visuals)
@@ -481,6 +499,7 @@ void EffectGlow::Render(int x, int y, int w, int h)
     {
         SS_Null.SetStencilState(ptr);
     }
+#endif
 }
 
 EffectGlow g_EffectGlow;

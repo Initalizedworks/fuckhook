@@ -270,7 +270,7 @@ static InitRoutine init(
                     static auto addr1 = gSignatures.GetClientSignature("8B 43 54 89 04 24 E8 ? ? ? ? F6 43 30 01 89 C7");                          // GetParticleSystemNameFromIndex detour
                     static auto addr2 = gSignatures.GetClientSignature("E8 ? ? ? ? 85 C0 89 C3 0F 84 ? ? ? ? 8B 00 89 1C 24 FF 90 ? ? ? ? 80 BB"); // GetActiveTFWeapon detour
                     static auto addr3 = gSignatures.GetClientSignature("E8 ? ? ? ? 89 F8 84 C0 0F 85 ? ? ? ? 85 F6");
-                    static auto addr4 = gSignatures.GetClientSignature("E8 ? ? ? ? 8D 85 ? ? ? ? 89 74 24 ? 89 44 24 ? 8B 85 ? ? ? ? C7 44 24 ? 00 00 00 00");
+                    static auto addr4 = gSignatures.GetClientSignature("E8 ? ? ? ? 8D 85 ? ? ? ? 89 7C 24 0C 89 44 24 10");
                     static auto addr5 = gSignatures.GetClientSignature("E8 ? ? ? ? 8D 65 F4 5B 5E 5F 5D C3 8D 76 00 8B 43 0C"); // FX_Tracer detour
 
                     BytePatch::mprotectAddr(addr1 + 1, 4, PROT_READ | PROT_WRITE | PROT_EXEC);

@@ -5,6 +5,7 @@
 #pragma once
 
 #include <string>
+#include <glez/font.hpp>
 
 namespace zerokernel
 {

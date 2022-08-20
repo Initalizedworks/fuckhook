@@ -5,7 +5,6 @@
             <AutoVariable width="fill" target="misc.full-auto" label="Fully automated firing"/>
             <AutoVariable width="fill" target="misc.show-spectators" label="Show spectators"/>
             <AutoVariable width="fill" target="misc.tauntslide" label="Tauntslide"/>
-            <AutoVariable width="fill" target="anti-pazer.enable" label="AntiPazer" tooltip="Will abandon if a trusted pazer user joins our game"/>
         </List>
     </Box>
     <Box height="content" width="content" padding="12 6 6 6" name="Fake name" x="215">
@@ -24,7 +23,7 @@
             <AutoVariable width="fill" target="misc.random-name" label="Random name"/>
         </List>
     </Box>
-    <Box height="content" width="content" padding="12 6 6 6" name="Extra" y="70">
+    <Box height="content" width="content" padding="12 6 6 6" name="Extra" y="115">
         <List width="200">
             <AutoVariable width="fill" target="noisemaker-spam.enable" label="Noisemaker spam"/>
             <AutoVariable width="fill" target="player-tools.ignore.taunting" label="Ignore taunting players"/>

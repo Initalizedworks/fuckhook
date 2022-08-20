@@ -33,8 +33,8 @@ namespace navparser
 static settings::Boolean enabled("nav.enabled", "false");
 static settings::Boolean draw("nav.draw", "false");
 static settings::Boolean look{ "nav.look-at-path", "false" };
+static settings::Boolean draw_debug_areas("nav.draw.debug-areas", "false");
 static settings::Boolean log_pathing{ "nav.log", "false" };
-static settings::Int crumb_tollerance("nav.crumb-tollerance", "50");
 static settings::Int stuck_time{ "nav.stuck-time", "1000" };
 static settings::Int vischeck_cache_time{ "nav.vischeck-cache.time", "240" };
 static settings::Boolean vischeck_runtime{ "nav.vischeck-runtime.enabled", "true" };
@@ -184,9 +184,7 @@ public:
     NavState state;
     micropather::MicroPather pather{ this, 3000, 6, true };
     std::string mapname;
-    /* Boost here */
     std::unordered_map<std::pair<CNavArea *, CNavArea *>, CachedConnection, boost::hash<std::pair<CNavArea *, CNavArea *>>> vischeck_cache;
-    /* Boost here */
     std::unordered_map<std::pair<CNavArea *, CNavArea *>, CachedStucktime, boost::hash<std::pair<CNavArea *, CNavArea *>>> connection_stuck_time;
     // This is a pure blacklist that does not get cleared and is for free usage internally and externally, e.g. blacklisting where enemies are standing
     // This blacklist only gets cleared on map change, and can be used time independantly.
@@ -491,6 +489,7 @@ Vector last_destination;
 
 bool isReady()
 {
+    // F you Pipeline
     return enabled && map && map->state == NavState::Active && (g_pGameRules->roundmode > 3);
 }
 
@@ -659,7 +658,7 @@ static void followCrumbs()
         current_vec.z = g_pLocalPlayer->v_Origin.z;
 
     // We are close enough to the crumb to have reached it
-    if (current_vec.DistTo(g_pLocalPlayer->v_Origin) < *crumb_tollerance)
+    if (current_vec.DistTo(g_pLocalPlayer->v_Origin) < 50)
     {
         last_crumb = crumbs[0];
         crumbs.erase(crumbs.begin());
@@ -674,7 +673,7 @@ static void followCrumbs()
         current_vec.z = g_pLocalPlayer->v_Origin.z;
 
     // We are close enough to the second crumb, Skip both (This is espcially helpful with drop downs)
-    if (crumbs.size() > 1 && crumbs[1].vec.DistTo(g_pLocalPlayer->v_Origin) < *crumb_tollerance)
+    if (crumbs.size() > 1 && crumbs[1].vec.DistTo(g_pLocalPlayer->v_Origin) < 50)
     {
         last_crumb = crumbs[1];
         crumbs.erase(crumbs.begin(), std::next(crumbs.begin()));
@@ -978,6 +977,16 @@ void Draw()
 {
     if (!isReady() || !draw)
         return;
+    if (draw_debug_areas && CE_GOOD(LOCAL_E) && LOCAL_E->m_bAlivePlayer())
+    {
+        auto area = map->findClosestNavSquare(g_pLocalPlayer->v_Origin);
+        auto edge = area->getNearestPoint(g_pLocalPlayer->v_Origin.AsVector2D());
+        Vector scrEdge;
+        edge.z += PLAYER_JUMP_HEIGHT;
+        if (draw::WorldToScreen(edge, scrEdge))
+            draw::Rectangle(scrEdge.x - 2.0f, scrEdge.y - 2.0f, 4.0f, 4.0f, colors::red);
+        drawNavArea(area);
+    }
 
     if (crumbs.empty())
         return;

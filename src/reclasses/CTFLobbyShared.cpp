@@ -24,3 +24,32 @@ CTFLobbyPlayer CTFLobbyShared::GetPendingPlayerDetails(int idx)
                                                                                                                                       "ff 50 40 8b 40 7c 8b 04 b0 eb"));
     return pGetPendingPlayerDetails(this, idx);
 }
+
+static CatCommand debug("debug_lobby", "Prints lobby information like tf_lobby_debug", []() {
+    int members, pending, i;
+    CTFLobbyPlayer *player;
+
+    auto lobby = CTFLobbyShared::GetLobby();
+    if (!lobby)
+    {
+        logging::Info("cat_debug_lobby: No lobby object");
+        return;
+    }
+    members = lobby->GetNumMembers();
+    pending = lobby->GetNumPendingPlayers();
+    logging::Info("Members/pending: %d/%d (%llu)", members, pending, lobby->GetGroupID());
+    for (i = 0; i < members; ++i)
+    {
+        player = lobby->GetPlayer(i);
+        if (!player)
+            continue;
+        logging::Info("m[%d] %u %d", i, player->GetID().GetAccountID(), player->GetTeam());
+    }
+    for (i = 0; i < pending; ++i)
+    {
+        player = lobby->GetPendingPlayer(i);
+        if (!player)
+            continue;
+        logging::Info("p[%d] %u %d", i, player->GetID().GetAccountID(), player->GetTeam());
+    }
+});

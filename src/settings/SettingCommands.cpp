@@ -20,11 +20,7 @@
 
 namespace settings::commands
 {
-#if ENABLE_NULL_GRAPHICS
-static settings::Boolean autosave{ "settings.autosave", "false" };
-#else
 static settings::Boolean autosave{ "settings.autosave", "true" };
-#endif
 
 #if ENABLE_VISUALS
 void refreshConfigList()

@@ -25,15 +25,16 @@ extern bool user_sensitivity_ratio_set;
 extern bool calculated_can_shoot;
 extern float prevflow;
 extern int prevflowticks;
-extern int anti_balance_attempts;
 #if ENABLE_VISUALS
 extern int spectator_target;
 extern CLC_VoiceData *voicecrash;
 extern bool freecam_is_toggled;
 #endif
+extern settings::Boolean clean_chat;
 
 /* BAJA BLAST !!!! */
 extern settings::Boolean clean_screenshots;
+extern settings::Boolean crypt_chat;
 extern settings::Boolean nolerp;
 extern float backup_lerp;
 extern settings::Int fakelag_amount;

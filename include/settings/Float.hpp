@@ -12,7 +12,7 @@ namespace settings
 template <> class Variable<float> : public ArithmeticVariable<float>
 {
 public:
-    ~Variable() override = default;
+    ~Variable<float>() override = default;
 
     VariableType getType() override
     {

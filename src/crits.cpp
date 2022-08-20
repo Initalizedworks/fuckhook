@@ -38,7 +38,6 @@ static bool is_out_of_sync = false;
 // Optimization
 static int shots_to_fill_bucket = 0;
 
-bool calling_crithelper = false;
 static float getBucketCap()
 {
     static ConVar *tf_weapon_criticals_bucket_cap = g_ICvar->FindVar("tf_weapon_criticals_bucket_cap");
@@ -220,9 +219,7 @@ static int nextCritTick(int loops = 4096)
         *g_PredictionRandomSeed = MD5_PseudoRandom(cmd_number) & 0x7FFFFFFF;
         // Save weapon state to not break anything
         weapon_info info(wep);
-        calling_crithelper = true;
-        bool is_crit       = re::C_TFWeaponBase::CalcIsAttackCritical(wep);
-        calling_crithelper = false;
+        bool is_crit = re::C_TFWeaponBase::CalcIsAttackCritical(wep);
         // Restore state
         info.restore_data(wep);
         // Is a crit

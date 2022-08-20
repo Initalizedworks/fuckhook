@@ -45,7 +45,11 @@ static settings::Boolean debug{ "auto-item.debug", "false" };
     if (*debug)    \
     logging::Info("AutoItem.cpp: " __VA_ARGS__)
 
+#if ENABLE_TEXTMODE
+static settings::Boolean autoNoisemaker{ "misc.auto-noisemaker", "true" };
+#else
 static settings::Boolean autoNoisemaker{ "misc.auto-noisemaker", "false" };
+#endif
 
 // 536 is Birthday noisemaker
 // 673 is Christmas noisemaker
@@ -184,7 +188,6 @@ void getAndEquipWeapon(std::string str, int clazz, int slot)
         {
             if (str.find('/') != std::string::npos)
             {
-                /* Boost here */
                 boost::split(ids_split_str, str, boost::is_any_of("/"));
                 for (auto &id : ids_split_str)
                 {
@@ -255,7 +258,6 @@ void getAndEquipWeapon(std::string str, int clazz, int slot)
                     continue;
 
                 // Split this crafting group into IDs
-                /* Boost here */
                 boost::split(ids_rec_str, group_str, boost::is_any_of(","));
 
                 try
@@ -458,7 +460,6 @@ CatCommand unlock("achievement_unlock", "Unlock all achievements", Unlock);
 void rvarCallback(std::string after, int idx)
 {
     craft_groups[idx].clear();
-    /* Boost here */
     boost::split(craft_groups[idx], after, boost::is_any_of(";-"));
 }
 

@@ -12,7 +12,11 @@ extern void fire_event(IGameEvent *event);
 namespace hooked_methods
 {
 
+#if !ENFORCE_STREAM_SAFETY
 static settings::Boolean enable_antispam{ "chat.party.anticrash.enabled", "true" };
+#else
+static settings::Boolean enable_antispam{ "chat.party.anticrash.enabled", "false" };
+#endif
 
 // max messages in 5 seconds before being flagged
 static settings::Int spam_rate{ "chat.party.anticrash.limit-rate", "12" };
