@@ -459,7 +459,6 @@ bool chams_attachment_drawing = false;
 // Purpose => Render overriden model and and attachments
 void RenderChamsRecursive(IClientEntity *entity, CMaterialReference &mat, IVModelRender *this_, const DrawModelState_t &state, const ModelRenderInfo_t &info, matrix3x4_t *bone)
 {
-#if !ENFORCE_STREAM_SAFETY
     if (!enable)
         return;
     original::DrawModelExecute(this_, state, info, bone);
@@ -478,7 +477,6 @@ void RenderChamsRecursive(IClientEntity *entity, CMaterialReference &mat, IVMode
         chams_attachment_drawing = false;
         attach                   = g_IEntityList->GetClientEntity(*(int *) ((uintptr_t) attach + netvar.m_Collision - 20) & 0xFFF);
     }
-#endif
 }
 
 // Purpose => Apply and render chams according to settings

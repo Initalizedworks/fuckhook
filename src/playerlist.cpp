@@ -18,8 +18,8 @@ namespace playerlist
 
 std::unordered_map<unsigned, userdata> data{};
 
-const std::string k_Names[]                                     = { "DEFAULT", "FRIEND", "RAGE", "IPC", "TEXTMODE", "CAT", "PRIVATE", "PAZER", "PARTY" };
-const char *const k_pszNames[]                                  = { "DEFAULT", "FRIEND", "RAGE", "IPC", "TEXTMODE", "CAT", "PRIVATE", "PAZER", "PARTY" };
+const std::string k_Names[]                                     = { "DEFAULT", "FRIEND", "RAGE", "IPC", "CAT", "PRIVATE", "PAZER", "PARTY" };
+const char *const k_pszNames[]                                  = { "DEFAULT", "FRIEND", "RAGE", "IPC", "CAT", "PRIVATE", "PAZER", "PARTY" };
 const std::array<std::pair<k_EState, size_t>, 4> k_arrGUIStates = { std::pair(k_EState::DEFAULT, 0), { k_EState::FRIEND, 1 }, { k_EState::RAGE, 2 }, { k_EState::PAZER, 3 } };
 const userdata null_data{};
 #if ENABLE_VISUALS
@@ -192,14 +192,6 @@ bool ChangeState(unsigned int steamid, k_EState state, bool force)
         return false;
     case k_EState::PRIVATE:
         return false;
-    case k_EState::TEXTMODE:
-        if (state != k_EState::PRIVATE || state == k_EState::IPC || state == k_EState::FRIEND)
-        {
-            ChangeState(steamid, state, true);
-            return true;
-        }
-        else
-            return false;
     case k_EState::PARTY:
         if (state == k_EState::FRIEND || state != k_EState::PRIVATE)
         {
@@ -209,7 +201,7 @@ bool ChangeState(unsigned int steamid, k_EState state, bool force)
         else
             return false;
     case k_EState::IPC:
-        if (state != k_EState::PRIVATE || state == k_EState::FRIEND || state == k_EState::TEXTMODE || state == k_EState::PARTY)
+        if (state != k_EState::PRIVATE || state == k_EState::FRIEND || state == k_EState::PARTY)
         {
             ChangeState(steamid, state, true);
             return true;
@@ -339,7 +331,7 @@ CatCommand pl_set_state("pl_set_state", "cat_pl_set_state [playername] [state] (
                                 return;
                             }
                             std::string state = args.Arg(2);
-                            boost::to_upper(state);
+                            StringToUpper(state.data(), state.data());
                             player_info_s info;
                             GetPlayerInfo(id, &info);
 
@@ -396,21 +388,24 @@ static int cat_pl_set_state_completionCallback(const char *c_partial, char comma
 
     if (parts[0].empty() || (parts[1].empty() && (!parts[0].empty() && partial.back() != ' ')))
     {
-        boost::to_lower(parts[0]);
+        StringToLower(parts[0].data(), parts[0].data());
         for (const auto &s : names)
         {
-            // if (s.find(parts[0]) == 0)
-            if (boost::to_lower_copy(s).find(parts[0]) == 0)
+            std::string c(s);
+            StringToLower(c.data(), c.data());
+            if (c.find(parts[0]) == 0)
             {
                 snprintf(commands[count++], COMMAND_COMPLETION_ITEM_LENGTH - 1, "cat_pl_set_state %s", s.c_str());
             }
         }
         return count;
     }
-    boost::to_lower(parts[1]);
+    StringToLower(parts[1].data(), parts[1].data());
     for (const auto &s : k_Names)
     {
-        if (boost::to_lower_copy(s).find(parts[1]) == 0)
+        std::string c(s);
+        StringToLower(c.data(), c.data());
+        if (c.find(parts[1]) == 0)
         {
             snprintf(commands[count++], COMMAND_COMPLETION_ITEM_LENGTH - 1, "cat_pl_set_state %s %s", parts[0].c_str(), s.c_str());
             if (count == COMMAND_COMPLETION_MAXITEMS)

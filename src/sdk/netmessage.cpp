@@ -369,7 +369,7 @@ bool CLC_RespondCvarValue::ReadFromBuffer(bf_read &buffer)
 
 const char *CLC_RespondCvarValue::ToString(void) const
 {
-    return strfmt("%s: status: %d, value: %s, cookie: %d", GetName(), m_eStatusCode, m_szCvarValue, m_iCookie).release();
+    return format_cstr("%s: status: %d, value: %s, cookie: %d", GetName(), m_eStatusCode, m_szCvarValue, m_iCookie).release();
 }
 
 bool NET_NOP::WriteToBuffer(bf_write &buffer)
@@ -407,7 +407,7 @@ bool NET_SignonState::ReadFromBuffer(bf_read &buffer)
 
 const char *NET_SignonState::ToString(void) const
 {
-    return strfmt("net_SignonState: state %i, count %i", m_nSignonState, m_nSpawnCount).release();
+    return format_cstr("net_SignonState: state %i, count %i", m_nSignonState, m_nSpawnCount).release();
 }
 
 #define NUM_NEW_COMMAND_BITS 4
@@ -418,7 +418,7 @@ const char *NET_SignonState::ToString(void) const
 
 const char *CLC_VoiceData::ToString(void) const
 {
-    return strfmt("%s: %i bytes", GetName(), Bits2Bytes(m_nLength)).release();
+    return format_cstr("%s: %i bytes", GetName(), Bits2Bytes(m_nLength)).release();
 }
 
 bool CLC_VoiceData::WriteToBuffer(bf_write &buffer)
@@ -456,7 +456,7 @@ bool CLC_BaselineAck::ReadFromBuffer(bf_read &buffer)
 
 const char *CLC_BaselineAck::ToString(void) const
 {
-    return strfmt("%s: tick %i", GetName(), m_nBaselineTick).release();
+    return format_cstr("%s: tick %i", GetName(), m_nBaselineTick).release();
 }
 
 bool CLC_ListenEvents::WriteToBuffer(bf_write &buffer)
@@ -493,7 +493,7 @@ const char *CLC_ListenEvents::ToString(void) const
             count++;
     }
 
-    return strfmt("%s: registered events %i", GetName(), count).release();
+    return format_cstr("%s: registered events %i", GetName(), count).release();
 }
 
 const char *CLC_Move::ToString(void) const

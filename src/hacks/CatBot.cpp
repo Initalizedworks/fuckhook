@@ -10,10 +10,12 @@
 #include "common.hpp"
 #include "hack.hpp"
 #include "PlayerTools.hpp"
+#include "MiscTemporary.hpp"
 #include "e8call.hpp"
 #include "navparser.hpp"
 #include "SettingCommands.hpp"
 #include "glob.h"
+#include <unordered_set>
 
 namespace hacks::catbot
 {
@@ -23,7 +25,116 @@ static settings::Int micspam_on{ "cat-bot.micspam.interval-on", "3" };
 static settings::Int micspam_off{ "cat-bot.micspam.interval-off", "60" };
 
 static settings::Boolean random_votekicks{ "cat-bot.votekicks", "false" };
+static settings::Int requeue_if_humans_lte{ "cat-bot.requeue-if.humans-lte", "0" };
 static settings::Boolean autovote_map{ "cat-bot.autovote-map", "true" };
+
+/* votekicks start */
+
+static settings::Boolean enabled{ "votekicks.enabled", "false" };
+/* 0 - Smart, 1 - Random, 2 - Sequential */
+static settings::Int mode{ "votekicks.mode", "0" };
+/* static settings::Int reason{ "votekicks.reason", "0" }; */
+/* Time between calling a vote in milliseconds */
+static settings::Int timer{ "votekicks.timer", "1000" };
+/* Minimum amount of team members to start a vote */
+static settings::Int min_team_size{ "votekicks.min-team-size", "4" };
+/* Only kick rage or pazer playerlist states */
+static settings::Boolean rage_only{ "votekicks.rage-only", "false" };
+
+/* Priority settings */
+static settings::Boolean prioritize_rage{ "votekicks.prioritize.rage", "true" };
+static settings::Boolean prioritize_previously_kicked{ "votekicks.prioritize.previous", "true" };
+/* If highest score target >= this rvar (& gt 0), make them highest priority to kick */
+static settings::Int prioritize_highest_score{ "votekicks.prioritize.highest-score", "0" };
+
+std::unordered_set<uint32> previously_kicked;
+
+/*const std::string votekickreason[] = { "", "cheating", "scamming", "idle" }; */
+
+static int GetKickScore(int uid)
+{
+    player_info_s i{};
+    int idx = g_IEngine->GetPlayerForUserID(uid);
+    if (!g_IEngine->GetPlayerInfo(idx, &i))
+        return 0;
+
+    uid = 0;
+    if (prioritize_previously_kicked && previously_kicked.find(i.friendsID) != previously_kicked.end())
+        uid += 500;
+    if (prioritize_rage)
+    {
+        auto &pl = playerlist::AccessData(i.friendsID);
+        if (pl.state == playerlist::k_EState::RAGE || pl.state == playerlist::k_EState::PAZER)
+            uid += 1000;
+    }
+
+    uid += g_pPlayerResource->GetScore(idx);
+    return uid;
+}
+
+static void CreateMove()
+{
+    static Timer votekicks_timer;
+    if (!votekicks_timer.test_and_set(*timer))
+        return;
+
+    player_info_s local_info{};
+    std::vector<int> targets;
+    std::vector<int> scores;
+    int teamSize = 0;
+
+    if (CE_BAD(LOCAL_E) || !g_IEngine->GetPlayerInfo(LOCAL_E->m_IDX, &local_info))
+        return;
+    for (int i = 1; i < g_GlobalVars->maxClients; ++i)
+    {
+        player_info_s info{};
+        if (!g_IEngine->GetPlayerInfo(i, &info) || !info.friendsID)
+            continue;
+        if (g_pPlayerResource->GetTeam(i) != g_pLocalPlayer->team)
+            continue;
+        teamSize++;
+
+        if (info.friendsID == local_info.friendsID)
+            continue;
+        if (!player_tools::shouldTargetSteamId(info.friendsID))
+            continue;
+        auto &pl = playerlist::AccessData(info.friendsID);
+        if (rage_only && (pl.state != playerlist::k_EState::RAGE && pl.state != playerlist::k_EState::PAZER))
+            continue;
+
+        targets.push_back(info.userID);
+        scores.push_back(g_pPlayerResource->GetScore(g_IEngine->GetPlayerForUserID(info.userID)));
+    }
+    if (targets.empty() || scores.empty() || teamSize <= *min_team_size)
+        return;
+
+    int target;
+    auto score_iterator = std::max_element(scores.begin(), scores.end());
+
+    switch (*mode)
+    {
+    case 0:
+        // Smart mode - Sort by kick score
+        std::sort(targets.begin(), targets.end(), [](int a, int b) { return GetKickScore(a) > GetKickScore(b); });
+        target = (*prioritize_highest_score && *score_iterator >= *prioritize_highest_score) ? targets[std::distance(scores.begin(), score_iterator)] : targets[0];
+        break;
+    case 1:
+        // Random
+        target = targets[UniformRandomInt(0, targets.size() - 1)];
+        break;
+    case 2:
+        // Sequential
+        target = targets[0];
+        break;
+    }
+
+    player_info_s info{};
+    if (!g_IEngine->GetPlayerInfo(g_IEngine->GetPlayerForUserID(target), &info))
+        return;
+    hack::ExecuteCommand(/*format(*/"callvote kick \"" + std::to_string(target) + " cheating\""/*, votekickreason[int(reason)]).c_str()*/);
+}
+
+/* votekicks end */
 
 settings::Boolean catbotmode{ "cat-bot.enable", "true" };
 settings::Boolean anti_motd{ "cat-bot.anti-motd", "false" };
@@ -137,15 +248,25 @@ Timer micspam_on_timer{};
 Timer micspam_off_timer{};
 
 
-CatCommand print_ammo("debug_print_ammo", "debug",
-                      []()
-                      {
-                          if (CE_BAD(LOCAL_E) || !LOCAL_E->m_bAlivePlayer() || CE_BAD(LOCAL_W))
-                              return;
-                          logging::Info("Current slot: %d", re::C_BaseCombatWeapon::GetSlot(RAW_ENT(LOCAL_W)));
-                          for (int i = 0; i < 10; i++)
-                              logging::Info("Ammo Table %d: %d", i, CE_INT(LOCAL_E, netvar.m_iAmmo + i * 4));
-                      });
+CatCommand print_ammo("debug_print_ammo", "debug", []() {
+    if (CE_BAD(LOCAL_E) || !LOCAL_E->m_bAlivePlayer() || CE_BAD(LOCAL_W))
+        return;
+    logging::Info("Current slot: %d", re::C_BaseCombatWeapon::GetSlot(RAW_ENT(LOCAL_W)));
+    for (int i = 0; i < 10; i++)
+    logging::Info("Ammo Table %d: %d", i, CE_INT(LOCAL_E, netvar.m_iAmmo + i * 4));
+    });
+
+static CatCommand debugKickScore("debug_kickscore", "Prints kick score for each player", []() {
+    player_info_s info{};
+    if (!g_IEngine->IsInGame())
+        return;
+    for (int i = 1; i < g_GlobalVars->maxClients; ++i)
+    {
+        if (!g_IEngine->GetPlayerInfo(i, &info) || !info.friendsID)
+            continue;
+        logging::Info("%d %u %s: %d", i, info.friendsID, info.name, GetKickScore(info.userID));
+    }
+});
 static Timer disguise{};
 static Timer report_timer{};
 static std::string health = "Health: 0/0";
@@ -226,13 +347,38 @@ void update()
             if (playerlist::AccessData(info.friendsID).state == playerlist::k_EState::CAT)
                 --count_total;
 
-            if (playerlist::AccessData(info.friendsID).state == playerlist::k_EState::IPC || playerlist::AccessData(info.friendsID).state == playerlist::k_EState::TEXTMODE)
+            if (playerlist::AccessData(info.friendsID).state == playerlist::k_EState::IPC)
             {
                 ipc_list.push_back(info.friendsID);
                 ++count_ipc;
             }
+            /* Check this so we don't spam logs */
+            re::CTFGCClientSystem *gc = re::CTFGCClientSystem::GTFGCClientSystem();
+            re::CTFPartyClient *pc    = re::CTFPartyClient::GTFPartyClient();
+            if (requeue_if_humans_lte && gc && gc->BConnectedToMatchServer(true) && gc->BHaveLiveMatch())
+            {
+                if (pc && !(pc->BInQueueForMatchGroup(tfmm::getQueue()) || pc->BInQueueForStandby()))
+                {
+                    if (count_total - count_bot <= int(requeue_if_humans_lte))
+                    {
+                        tfmm::startQueue();
+                        logging::Info("Requeuing because there are %d non-bots in "
+                                        "game, and requeue_if_humans_lte is %d.",
+                                        count_total - count_bot, int(requeue_if_humans_lte));
+                        return;
+                    }
+                }
+            }
         }
     }
+}
+
+static void register_votekicks(bool enable)
+{
+    if (enable)
+        EC::Register(EC::CreateMove, CreateMove, "cm_votekicks");
+    else
+        EC::Unregister(EC::CreateMove, "cm_votekicks");
 }
 
 void init()
@@ -263,6 +409,12 @@ static void draw()
     AddCenterString(ammo, colors::yellow);
 }
 #endif
+
+static InitRoutine init([]() {
+    enabled.installChangeCallback([](settings::VariableBase<bool> &var, bool new_val) { register_votekicks(new_val); });
+    if (*enabled)
+        register_votekicks(true);
+});
 
 static InitRoutine runinit(
     []()

@@ -25,7 +25,7 @@ void logging::Initialize()
 {
     // FIXME other method of naming the file?
     static passwd *pwd = getpwuid(getuid());
-    logging::handle.open(strfmt("/tmp/cathook-%s-%d.log", pwd->pw_name, getpid()).get(), std::ios::out | std::ios::app);
+    logging::handle.open(format_cstr("/tmp/cathook-%s-%d.log", pwd->pw_name, getpid()).get(), std::ios::out | std::ios::app);
 }
 #endif
 
@@ -42,7 +42,7 @@ static inline void Log(const char *result, bool file_only)
     strftime(timeString, sizeof(timeString), "%H:%M:%S", time_info);
 
     std::string to_log = result;
-    to_log             = strfmt("[%s] ", timeString).get() + to_log + "\n";
+    to_log             = format_cstr("[%s] ", timeString).get() + to_log + "\n";
     logging::handle << to_log;
     logging::handle.flush();
 #if ENABLE_VISUALS

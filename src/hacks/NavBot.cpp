@@ -24,7 +24,6 @@ static settings::Boolean capture_objectives("navbot.capture-objectives", "false"
 static settings::Boolean defend_payload("navbot.defend-payload", "false");
 static settings::Boolean autozoom("navbot.autozoom.enabled", "false");
 static settings::Float zoom_distance("navbot.autozoom.trigger-distance", "600");
-static settings::Int zoom_time("navbot.autozoom.unzoom-time", "5000");
 static settings::Int melee_range("navbot.primary-only-melee-range", "150");
 static settings::Boolean snipe_sentries("navbot.snipe-sentries", "false");
 static settings::Boolean escape_danger("navbot.escape-danger", "false");
@@ -972,7 +971,7 @@ static bool buildBuilding(int building)
         {
             static Timer command_timer;
             if (command_timer.test_and_set(100))
-                g_IEngine->ClientCmd_Unrestricted(strfmt("build %d", building).get());
+                g_IEngine->ClientCmd_Unrestricted(format_cstr("build %d", building).get());
         }
         else if (CE_INT(ENTITY(hacks::misc::getCarriedBuilding()), netvar.m_bCanPlace))
             current_user_cmd->buttons |= IN_ATTACK;
@@ -1343,17 +1342,12 @@ static void autoZoom(std::pair<CachedEntity *, float> &nearest)
         return;
     if (CE_BAD(LOCAL_E) || !LOCAL_E->m_bAlivePlayer() || CE_BAD(LOCAL_W))
         return;
-    static Timer last_zoom{};
-    static Timer timeinzoom{};
-    if (!last_zoom.test_and_set(1000) && g_pLocalPlayer->holding_sniper_rifle)
+    if (g_pLocalPlayer->holding_sniper_rifle)
         return;
     // Zoom in and update timeinzoom
     if (g_pLocalPlayer->holding_sniper_rifle && nearest.second <= *zoom_distance && !g_pLocalPlayer->bZoomed)
         current_user_cmd->buttons |= IN_ATTACK2;
-    if (nearest.second <= *zoom_distance)
-        timeinzoom.update();
-    // If we've been zoomed in for more than (amount), unzoom.
-    if (g_pLocalPlayer->bZoomed && g_pLocalPlayer->holding_sniper_rifle && timeinzoom.check(*zoom_time) && !nearest.second <= *zoom_distance)
+    if (g_pLocalPlayer->bZoomed && g_pLocalPlayer->holding_sniper_rifle &&!nearest.second <= *zoom_distance)
         current_user_cmd->buttons |= IN_ATTACK2;
     if (LOCAL_W->m_iClassID() == CL_CLASS(CTFMinigun) && nearest.second <= *zoom_distance)
         current_user_cmd->buttons |= IN_JUMP | IN_ATTACK2;

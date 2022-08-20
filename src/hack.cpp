@@ -116,7 +116,7 @@ void critical_error_handler(int signum)
     namespace st = boost::stacktrace;
     ::signal(signum, SIG_DFL);
     passwd *pwd = getpwuid(getuid());
-    std::ofstream out(strfmt("/tmp/cathook-%s-%d-segfault.log", pwd->pw_name, getpid()).get());
+    std::ofstream out(format_cstr("/tmp/cathook-%s-%d-segfault.log", pwd->pw_name, getpid()).get());
 
     Dl_info info;
     if (!dladdr(reinterpret_cast<void *>(hack::ExecuteCommand), &info))
@@ -265,11 +265,11 @@ void hack::Initialize()
 #endif
     time_injected = time(nullptr);
 /*passwd *pwd   = getpwuid(getuid());
-char *logname = strfmt("/tmp/cathook-game-stdout-%s-%u.log", pwd->pw_name,
+char *logname = format_cstr("/tmp/cathook-game-stdout-%s-%u.log", pwd->pw_name,
 time_injected);
 freopen(logname, "w", stdout);
 free(logname);
-logname = strfmt("/tmp/cathook-game-stderr-%s-%u.log", pwd->pw_name,
+logname = format_cstr("/tmp/cathook-game-stderr-%s-%u.log", pwd->pw_name,
 time_injected);
 freopen(logname, "w", stderr);
 free(logname);*/

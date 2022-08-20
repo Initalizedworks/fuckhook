@@ -4,9 +4,6 @@
 
 #pragma once
 
-#include <glez/font.hpp>
-#include <glez/color.hpp>
-
 namespace zerokernel
 {
 

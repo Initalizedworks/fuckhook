@@ -33,7 +33,6 @@ static settings::Boolean afk{ "follow-bot.switch-afk", "true" };
 static settings::Int afktime{ "follow-bot.afk-time", "15000" };
 static settings::Boolean corneractivate{ "follow-bot.corners", "true" };
 static settings::Int steam_var{ "follow-bot.steamid", "0" };
-static settings::Boolean ignore_textmode{ "follow-bot.ignore-textmode", "true" };
 static settings::Boolean mimic_crouch{ "follow-bot.mimic-crouch", "true" };
 static settings::Boolean autozoom_if_idle{ "follow-bot.autozoom-if-idle", "true" };
 
@@ -301,8 +300,6 @@ static bool isValidTarget(CachedEntity *entity)
         return false;
     // Don't follow target that was determined afk
     if (afk && afkTicks[entity->m_IDX].check(*afktime))
-        return false;
-    if (ignore_textmode && playerlist::AccessData(entity).state == playerlist::k_EState::TEXTMODE)
         return false;
     return true;
 }

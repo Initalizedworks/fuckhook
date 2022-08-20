@@ -126,7 +126,7 @@ Vector GetForwardVector(float distance, CachedEntity *punch_entity = nullptr);
 CachedEntity *getClosestEntity(Vector vec);
 CachedEntity *getClosestNonlocalEntity(Vector vec);
 bool IsSentryBuster(CachedEntity *ent);
-std::unique_ptr<char[]> strfmt(const char *fmt, ...);
+std::unique_ptr<char[]> format_cstr(const char *fmt, ...);
 // TODO move that to weaponid.h
 int getWeaponByID(CachedEntity *player, int weaponid);
 bool HasWeapon(CachedEntity *ent, int wantedId);
@@ -213,6 +213,9 @@ float GetFov(Vector ang, Vector src, Vector dst);
 
 void ReplaceString(std::string &input, const std::string &what, const std::string &with_what);
 void ReplaceSpecials(std::string &input);
+
+void StringToLower(char *dest, const char *src);
+void StringToUpper(char *dest, const char *src);
 
 Vector ComputeMove(const Vector &a, const Vector &b);
 std::pair<float, float> ComputeMovePrecise(const Vector &a, const Vector &b);

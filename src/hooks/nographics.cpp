@@ -7,11 +7,16 @@
 
 #include "common.hpp"
 
+#if ENABLE_TEXTMODE
+static settings::Boolean fix_friends_crash("hack.fix-vgui-crash", "true");
+#else
+static settings::Boolean fix_friends_crash("hack.fix-vgui-crash", "false");
+#endif
+
 #if !ENABLE_TEXTMODE
 static settings::Boolean null_graphics("hack.nullgraphics", "false");
-#else
-static settings::Boolean null_graphics("hack.nullgraphics", "true");
 #endif
+
 typedef ITexture *(*FindTexture_t)(void *, const char *, const char *, bool, int);
 typedef IMaterial *(*FindMaterialEx_t)(void *, const char *, const char *, int, bool, const char *);
 typedef IMaterial *(*FindMaterial_t)(void *, const char *, const char *, bool, const char *);
@@ -62,7 +67,7 @@ static CatCommand RemoveNullhook("debug_material_hook_clear", "Debug", []() { Re
 static settings::Boolean debug_framerate("debug.framerate", "false");
 static float framerate = 0.0f;
 static Timer send_timer{};
-static InitRoutine init_nographics(
+static InitRoutine init_nullhook(
     []()
     {
 #if ENABLE_TEXTMODE
@@ -217,6 +222,25 @@ static bool FSHook_Precache(const char *pFileName, const char *pPathID)
 
 static CatCommand debug_invalidate("invalidate_mdl_cache", "Invalidates MDL cache", []() { g_IBaseClient->InvalidateMdlCache(); });
 
+/* WIP to reduce ram usage further on bots */
+static void NullifyVGUI()
+{
+    // CTFWinPanel::OnThink()
+    static BytePatch ram{ gSignatures.GetClientSignature,
+    "55 89 E5 56 53 83 EC 40 8B 5D ? F3 0F 10 83", 0x00, { 0xC3 } };
+    ram.Patch();
+
+
+    // CTFWinPanel::FireGameEvent( IGameEvent * event )
+    static BytePatch ram2{ gSignatures.GetClientSignature,
+    "55 89 E5 57 56 53 81 EC FC 15 00 00", 0x00, { 0xC3 } };
+    ram2.Patch();
+
+    // CTFHudWeaponAmmo::OnThink()
+    static BytePatch ram3{ gSignatures.GetClientSignature, "55 89 E5 57 56 53 83 EC 2C 8B 5D ? E8 ? ? ? ? 89 45", 0x00, { 0xC3 } };
+    ram3.Patch();
+}
+
 static hooks::VMTHook fs_hook{}, fs_hook2{};
 static bool hooked_fs = false;
 static void ReduceRamUsage()
@@ -261,6 +285,7 @@ static void ReduceRamUsage()
         particleCreate.Patch();
         particlePrecache.Patch();
         particleCreating.Patch();
+        NullifyVGUI();
     }
 }
 
@@ -310,21 +335,12 @@ static InitRoutineEarly nullify_textmode(
 #endif
 
 static Timer signon_timer;
-static InitRoutine nullifiy_textmode2(
+static InitRoutine init_nographics(
     []()
     {
 #if ENABLE_TEXTMODE
         ReduceRamUsage();
-#endif
-        null_graphics.installChangeCallback(
-            [](settings::VariableBase<bool> &, bool after)
-            {
-                if (after)
-                    ReduceRamUsage();
-                else
-                    UnHookFs();
-            });
-#if ENABLE_TEXTMODE
+
         // Catbots still hit properly, this just makes it easier to Stub stuff not needed in textmode
         uintptr_t g_bTextMode_ptrptr = gSignatures.GetEngineSignature("A2 ? ? ? ? 8B 43 04") + 0x1;
 
@@ -334,11 +350,40 @@ static InitRoutine nullifiy_textmode2(
 
         bool *g_bTextMode_ptr = *((bool **) g_bTextMode_ptrptr);
         *g_bTextMode_ptr      = true;
-        // Skip downloading ressources
+        /* FIXME causes crashes
         static BytePatch patch1(gSignatures.GetEngineSignature, "0F 85 ? ? ? ? A1 ? ? ? ? 8D 8B ? ? ? ?", 0x1, { 0x81 });
         patch1.Patch();
+        */
         // CViewRender::Render
         static BytePatch patch2(gSignatures.GetClientSignature, "55 89 E5 57 56 53 81 EC DC 03 00 00 C7 85 ? ? ? ? 00 00 00 00", 0x0, { 0x31, 0xC0, 0x40, 0xC3 });
         patch2.Patch();
+#else
+    null_graphics.installChangeCallback(
+        [](settings::VariableBase<bool> &, bool after)
+        {
+            if (after)
+                ReduceRamUsage();
+            else
+                UnHookFs();
+        });
 #endif
+    static BytePatch fixFriendsList1 { gSignatures.GetClientSignature, "55 89 E5 57 56 53 81 EC 8C 00 00 00 C7 45 ? 00 00 00 00 A1 ? ? ? ? C7 45 ? 00 00 00 00 8B 5D ? 85 C0 0F 84 ? ? ? ? 8D 55 ? 89 04 24 89 54 24 ? C7 44 24 ? ? ? ? ? C7 44 24 ? ? ? ? ? C7 44 24 ? ? ? ? ? C7 44 24 ? 38 01 00 00", 0x00, { 0xC3 } };
+    static BytePatch fixFriendsList2 { gSignatures.GetClientSignature, "55 89 E5 57 56 53 83 EC 6C 8B 75 ? 89 34 24 E8 ? ? ? ? 89 34 24", 0x00, { 0xC3 } }; /* FUN_012dc610 */
+    if (fix_friends_crash)
+    {
+        fixFriendsList1.Patch();
+        fixFriendsList2.Patch();
+    }
+    fix_friends_crash.installChangeCallback([](settings::VariableBase<bool> &, bool after) {
+        if (after)
+        {
+            fixFriendsList1.Patch();
+            fixFriendsList2.Patch();
+        }
+        else
+        {
+            fixFriendsList1.Shutdown();
+            fixFriendsList2.Shutdown();
+        }
     });
+});

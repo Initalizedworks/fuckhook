@@ -23,7 +23,7 @@
 
 namespace hacks::misc
 {
-#if !ENFORCE_STREAM_SAFETY && ENABLE_VISUALS
+#if ENABLE_VISUALS
 static settings::Boolean render_zoomed{ "visual.render-local-zoomed", "true" };
 #endif
 static settings::Boolean anti_afk{ "misc.anti-afk", "false" };
@@ -87,7 +87,7 @@ static settings::Boolean fix_cyoaanim{ "remove.contracker", "true" };
 static settings::Boolean fix_cyoaanim{ "remove.contracker", "false" };
 #endif
 
-#if !ENFORCE_STREAM_SAFETY && ENABLE_VISUALS
+#if ENABLE_VISUALS
 static void tryPatchLocalPlayerShouldDraw(bool after)
 {
     static BytePatch patch_shoulddraw{ gSignatures.GetClientSignature, "80 BB ? ? ? ? ? 75 DE", 0xD, { 0xE0 } };
@@ -789,7 +789,7 @@ static CatCommand reload_presence("presence_reload", "Reload rich presence file"
 
 #endif
 
-#if ENABLE_VISUALS && !ENFORCE_STREAM_SAFETY
+#if ENABLE_VISUALS
 // This makes us able to see enemy class and status in scoreboard and player panel
 static std::unique_ptr<BytePatch> patch_playerpanel;
 static std::unique_ptr<BytePatch> patch_scoreboard1;
@@ -952,7 +952,6 @@ static InitRoutine init_pyrovision(
         patch.Patch();
         EC::Register(
             EC::Shutdown, []() { patch.Shutdown(); }, "shutdown_pyrovis");
-#if !ENFORCE_STREAM_SAFETY
         EC::Register(
             EC::Paint,
             []()
@@ -1003,14 +1002,13 @@ static InitRoutine init_pyrovision(
                     return;
                 }
             });
-#endif
     });
 #endif
 
 static CatCommand print_eye_diff("debug_print_eye_diff", "debug", []() { logging::Info("%f", g_pLocalPlayer->v_Eye.z - LOCAL_E->m_vecOrigin().z); });
 void Shutdown()
 {
-#if ENABLE_VISUALS && !ENFORCE_STREAM_SAFETY
+#if ENABLE_VISUALS
     // unpatching local player
     render_zoomed = false;
     patch_playerpanel->Shutdown();
@@ -1089,7 +1087,6 @@ static InitRoutine init(
 #endif
 #if ENABLE_VISUALS
         EC::Register(EC::Draw, Draw, "draw_misc_hacks", EC::average);
-#if !ENFORCE_STREAM_SAFETY
         if (render_zoomed)
             tryPatchLocalPlayerShouldDraw(true);
         render_zoomed.installChangeCallback([](settings::VariableBase<bool> &, bool after) { tryPatchLocalPlayerShouldDraw(after); });
@@ -1130,7 +1127,6 @@ static InitRoutine init(
                 else
                     stealth_kill.Shutdown();
             });
-#endif
 #endif
     });
 } // namespace hacks::misc

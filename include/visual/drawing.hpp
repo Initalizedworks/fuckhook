@@ -1,3 +1,4 @@
+
 /*
  * drawing.h
  *
@@ -10,9 +11,6 @@
 #include "config.h"
 #if ENABLE_IMGUI_DRAWING
 #include "imgui/imrenderer.hpp"
-#elif ENABLE_GLEZ_DRAWING
-#include <glez/font.hpp>
-#include <glez/draw.hpp>
 #endif
 
 #include "colors.hpp"
@@ -46,8 +44,6 @@ struct font
 };
 #elif ENABLE_IMGUI_DRAWING
 typedef im_renderer::font font;
-#elif ENABLE_GLEZ_DRAWING
-typedef glez::font font;
 #endif
 
 extern std::unique_ptr<font> esp;
@@ -75,6 +71,7 @@ extern VMatrix wts;
 extern int width;
 extern int height;
 extern float fov;
+extern bool inited;
 
 void Initialize();
 
@@ -107,8 +104,6 @@ private:
 };
 #elif ENABLE_IMGUI_DRAWING
 typedef im_renderer::Texture Texture;
-#else
-typedef glez::texture Texture;
 #endif
 
 void Line(float x1, float y1, float x2, float y2, rgba_t color, float thickness);
@@ -128,3 +123,4 @@ void BeginGL();
 void EndGL();
 
 } // namespace draw
+
