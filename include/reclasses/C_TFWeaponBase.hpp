@@ -4,14 +4,10 @@
  *  Created on: Nov 23, 2017
  *      Author: nullifiedcat
  */
-
 #pragma once
-
 #include <common.hpp>
-
 namespace re
 {
-
 class C_TFWeaponBase : public re::C_BaseCombatWeapon
 {
 public:
@@ -40,47 +36,47 @@ public:
     inline static int GetWeaponID(IClientEntity *self)
     {
         typedef int (*fn_t)(IClientEntity *);
-        return vfunc<fn_t>(self, offsets::PlatformOffset(447, offsets::undefined, 447), 0)(self);
+        return vfunc<fn_t>(self, offsets::PlatformOffset(448, offsets::undefined, 448), 0)(self);
     }
     inline static bool IsViewModelFlipped(IClientEntity *self)
     {
         typedef bool (*fn_t)(IClientEntity *);
-        return vfunc<fn_t>(self, offsets::PlatformOffset(496, offsets::undefined, 496), 0)(self);
+        return vfunc<fn_t>(self, offsets::PlatformOffset(497, offsets::undefined, 497), 0)(self);
     }
     inline static IClientEntity *GetOwnerViaInterface(IClientEntity *self)
     {
         typedef IClientEntity *(*fn_t)(IClientEntity *);
-        return vfunc<fn_t>(self, offsets::PlatformOffset(454, offsets::undefined, 454), 0)(self);
+        return vfunc<fn_t>(self, offsets::PlatformOffset(455, offsets::undefined, 455), 0)(self);
     }
     inline static bool UsesPrimaryAmmo(IClientEntity *self)
     {
         typedef bool (*fn_t)(IClientEntity *);
-        return vfunc<fn_t>(self, offsets::PlatformOffset(450, offsets::undefined, 450), 0)(self);
+        return vfunc<fn_t>(self, offsets::PlatformOffset(451, offsets::undefined, 451), 0)(self);
     }
     inline static bool HasPrimaryAmmo(IClientEntity *self)
     {
         typedef bool (*fn_t)(IClientEntity *);
-        return vfunc<fn_t>(self, offsets::PlatformOffset(319, offsets::undefined, 319), 0)(self);
+        return vfunc<fn_t>(self, offsets::PlatformOffset(320, offsets::undefined, 320), 0)(self);
     }
     inline static bool AreRandomCritsEnabled(IClientEntity *self)
     {
         typedef bool (*fn_t)(IClientEntity *);
-        return vfunc<fn_t>(self, offsets::PlatformOffset(469, offsets::undefined, 469), 0)(self);
+        return vfunc<fn_t>(self, offsets::PlatformOffset(470, offsets::undefined, 470), 0)(self);
     }
     inline static bool CalcIsAttackCriticalHelper(IClientEntity *self)
     {
         typedef bool (*fn_t)(IClientEntity *);
-        return vfunc<fn_t>(self, offsets::PlatformOffset(463, offsets::undefined, 463), 0)(self);
+        return vfunc<fn_t>(self, offsets::PlatformOffset(464, offsets::undefined, 464), 0)(self);
     }
     inline static bool CalcIsAttackCriticalHelperNoCrits(IClientEntity *self)
     {
         typedef bool (*fn_t)(IClientEntity *);
-        return vfunc<fn_t>(self, offsets::PlatformOffset(462, offsets::undefined, 462), 0)(self);
+        return vfunc<fn_t>(self, offsets::PlatformOffset(463, offsets::undefined, 463), 0)(self);
     }
     inline static bool CanFireCriticalShot(IClientEntity *self, bool unknown1, IClientEntity *unknown2)
     {
         typedef bool (*fn_t)(IClientEntity *, bool, IClientEntity *);
-        return vfunc<fn_t>(self, offsets::PlatformOffset(492, offsets::undefined, 492), 0)(self, unknown1, unknown2);
+        return vfunc<fn_t>(self, offsets::PlatformOffset(493, offsets::undefined, 493), 0)(self, unknown1, unknown2);
     }
     inline static float ApplyFireDelay(IClientEntity *self, float delay)
     {
@@ -101,37 +97,29 @@ public:
         /*
         if (!weapon_info->unk_1736)
         {
-
         }
         */
     }
     inline static bool CalcIsAttackCriticalHelper_re(IClientEntity *self)
     {
         IClientEntity *owner = GetOwnerViaInterface(self);
-
         if (owner == nullptr)
             return false;
-
         if (!C_BaseEntity::IsPlayer(owner))
             return false;
-
         CTFPlayerShared *shared = &C_BasePlayer::shared_(owner);
         float critmult          = CTFPlayerShared::GetCritMult(shared);
         if (!CanFireCriticalShot(self, 0, nullptr))
             return false;
-
         if (CTFPlayerShared::IsCritBoosted(shared))
             return true;
-
         int unk1 = *(int *) (unsigned(self) + 2832u);
         int unk2 = *(int *) (unsigned(self) + 2820u);
         unk2 <<= 6;
-
         int unk3  = unk1 + unk2 + 1784;
         char unk4 = *(char *) (unk1 + unk2 + 1844);
         if (unk4 && *(float *) (unsigned(self) + 2864u) > g_GlobalVars->curtime)
             return true;
-
         int unk5         = *(int *) (unk1 + unk2 + 1788);
         int bullet_count = 0;
         if (unk5 > 0)
@@ -142,20 +130,16 @@ public:
         {
             bullet_count = 1;
         }
-
         float mult2 = *(float *) (unk3);
-
         float multiplier = 0.5f;
         int seed         = C_BaseEntity::m_nPredictionRandomSeed() ^ (owner->entindex() | (self->entindex() << 8));
         RandomSeed(seed);
-
         bool result = true;
         if (multiplier * 10000.0f <= RandomInt(0, 9999))
         {
             result     = false;
             multiplier = 0.0f;
         }
-
         return false;
     }
     inline static int CalcIsAttackCritical(IClientEntity *self)
@@ -167,12 +151,10 @@ public:
             {
                 // Always run calculations
                 // Never write anything into entity, at least from here.
-
                 // if (g_GlobalVars->framecount != *(int *)(self + 2872))
                 {
                     // *(int *)(self + 2872) = g_GlobalVars->framecount;
                     // *(char *)(self + 2839) = 0;
-
                     if (g_pGameRules->roundmode == 5 && g_pGameRules->winning_team == NET_INT(owner, netvar.iTeamNum))
                     {
                         // *(char *)(self + 2838) = 1;
@@ -188,7 +170,6 @@ public:
                 }
             }
         }
-
         return 0;
     }
     inline static uint16_t &weapon_info_handle_(IClientEntity *self)
