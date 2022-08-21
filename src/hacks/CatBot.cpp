@@ -10,6 +10,7 @@
 #include "common.hpp"
 #include "hack.hpp"
 #include "PlayerTools.hpp"
+#include "Votekicks.hpp"
 #include "MiscTemporary.hpp"
 #include "e8call.hpp"
 #include "navparser.hpp"
