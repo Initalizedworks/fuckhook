@@ -359,12 +359,12 @@ void update()
             {
                 if (pc && !(pc->BInQueueForMatchGroup(tfmm::getQueue()) || pc->BInQueueForStandby()))
                 {
-                    if (count_total - count_bot <= int(requeue_if_humans_lte))
+                    if (count_total - count_total <= int(requeue_if_humans_lte))
                     {
                         tfmm::startQueue();
                         logging::Info("Requeuing because there are %d non-bots in "
                                         "game, and requeue_if_humans_lte is %d.",
-                                        count_total - count_bot, int(requeue_if_humans_lte));
+                                        count_total - count_ipc, int(requeue_if_humans_lte));
                         return;
                     }
                 }
