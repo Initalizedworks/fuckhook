@@ -24,6 +24,7 @@ extern bool user_sensitivity_ratio_set;
 
 extern bool calculated_can_shoot;
 extern float prevflow;
+extern int anti_balance_attempts;
 extern int prevflowticks;
 #if ENABLE_VISUALS
 extern int spectator_target;
