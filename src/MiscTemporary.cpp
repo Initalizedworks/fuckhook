@@ -16,6 +16,7 @@ bool firstcm = false;
 Timer DelayTimer{};
 float prevflow            = 0.0f;
 int prevflowticks         = 0;
+int anti_balance_attempts = 0;
 int stored_buttons        = 0;
 bool calculated_can_shoot = false;
 bool ignoredc             = false;
