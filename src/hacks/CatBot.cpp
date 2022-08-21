@@ -148,18 +148,6 @@ CatCommand print_ammo("debug_print_ammo", "debug", []() {
     for (int i = 0; i < 10; i++)
     logging::Info("Ammo Table %d: %d", i, CE_INT(LOCAL_E, netvar.m_iAmmo + i * 4));
     });
-
-static CatCommand debugKickScore("debug_kickscore", "Prints kick score for each player", []() {
-    player_info_s info{};
-    if (!g_IEngine->IsInGame())
-        return;
-    for (int i = 1; i < g_GlobalVars->maxClients; ++i)
-    {
-        if (!g_IEngine->GetPlayerInfo(i, &info) || !info.friendsID)
-            continue;
-        logging::Info("%d %u %s: %d", i, info.friendsID, info.name, GetKickScore(info.userID));
-    }
-});
 static Timer disguise{};
 static Timer report_timer{};
 static std::string health = "Health: 0/0";
@@ -415,6 +403,18 @@ static void CreateMove()
         return;
     hack::ExecuteCommand(/*format(*/"callvote kick \"" + std::to_string(target) + " cheating\""/*, votekickreason[int(reason)]).c_str()*/);
 }
+    
+static CatCommand debugKickScore("debug_kickscore", "Prints kick score for each player", []() {
+    player_info_s info{};
+    if (!g_IEngine->IsInGame())
+        return;
+    for (int i = 1; i < g_GlobalVars->maxClients; ++i)
+    {
+        if (!g_IEngine->GetPlayerInfo(i, &info) || !info.friendsID)
+            continue;
+        logging::Info("%d %u %s: %d", i, info.friendsID, info.name, GetKickScore(info.userID));
+    }
+});
     
 static void register_votekicks(bool enable)
 {
