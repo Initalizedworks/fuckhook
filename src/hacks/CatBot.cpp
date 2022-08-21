@@ -410,12 +410,6 @@ static void draw()
 }
 #endif
 
-static InitRoutine init([]() {
-    enabled.installChangeCallback([](settings::VariableBase<bool> &var, bool new_val) { register_votekicks(new_val); });
-    if (*enabled)
-        register_votekicks(true);
-});
-
 static InitRoutine runinit(
     []()
     {
@@ -427,5 +421,8 @@ static InitRoutine runinit(
         EC::Register(EC::Draw, draw, "draw_catbot", EC::average);
 #endif
         init();
+        enabled.installChangeCallback([](settings::VariableBase<bool> &var, bool new_val) { register_votekicks(new_val); });
+    if (*enabled)
+        register_votekicks(true);
     });
 } // namespace hacks::catbot
