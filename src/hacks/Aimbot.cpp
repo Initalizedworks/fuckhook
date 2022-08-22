@@ -99,7 +99,8 @@ void spectatorUpdate()
     case 0:
         break;
         // Disable if being spectated in first person
-    case 1:{
+    case 1:
+    {
         if (g_pLocalPlayer->spectator_state == g_pLocalPlayer->FIRSTPERSON && !(!player_tools::shouldTargetSteamId(info.friendsID)))
         {
             enable   = *specenable;
@@ -109,7 +110,8 @@ void spectatorUpdate()
         break;
     }
         // Disable if being spectated
-    case 2:{
+    case 2:
+    {
         if (g_pLocalPlayer->spectator_state != g_pLocalPlayer->NONE && !(!player_tools::shouldTargetSteamId(info.friendsID)))
         {
             enable   = *specenable;
@@ -383,8 +385,6 @@ static void CreateMove()
         return;
     }
 
-    if (CE_INT(LOCAL_W, netvar.m_iClip1) == 0)
-        return;
     doAutoZoom(false);
     CachedEntity *target_entity = target_last = RetrieveBestTarget(aimkey_status);
     bool should_backtrack = hacks::backtrack::backtrackEnabled();
@@ -402,12 +402,14 @@ static void CreateMove()
                     int weapon_case = LOCAL_W->m_iClassID();
                     doAutoZoom(true);
                     /* very much simple ""fix"" for the aimbot death stare */
-                    if (g_pLocalPlayer->holding_sniper_rifle && g_pLocalPlayer->bZoomed)
+                    if (g_pLocalPlayer->holding_sniper_rifle && g_pLocalPlayer->bZoomed && CE_GOOD(LOCAL_W) && re::C_BaseCombatWeapon::GetSlot(RAW_ENT(LOCAL_W)) + 1 != 3)
                         Aim(target_entity);
                     else if (!g_pLocalPlayer->holding_sniper_rifle)
                         Aim(target_entity);
 
                     if(!hitscan_special_cases(target_entity, weapon_case))
+                        DoAutoshoot();
+                    else if (hitscan_special_cases(target_entity, weapon_case) && (CE_INT(LOCAL_W, netvar.m_iClip1) == 0))
                         DoAutoshoot();
             }
         break;
@@ -536,16 +538,13 @@ switch(weapon_case)
     }
     default:
         return true;
-
-
-
-
 }
 
 }
 
 bool hitscan_special_cases(CachedEntity* target_entity, int weapon_case){
-switch(weapon_case){
+switch(weapon_case)
+{
     case CL_CLASS(CTFMinigun):
     {
          if (!minigun_tapfire)
@@ -571,9 +570,9 @@ switch(weapon_case){
         return false;
 }
 
-
 }
-bool small_box_checker(CachedEntity* target_entity){
+bool small_box_checker(CachedEntity* target_entity)
+{
     if (CE_BAD(target_entity) ||!g_IEntityList->GetClientEntity(target_entity->m_IDX))
         return false;
     if (!target_entity->hitboxes.GetHitbox(calculated_data_array[target_entity->m_IDX].hitbox))
@@ -738,9 +737,9 @@ CachedEntity *RetrieveBestTarget(bool aimkey_state)
                 }
             }
         }
-        else{
+        else
             isTargetGood=IsTargetStateGood(ent);
-        }
+        
         if (isTargetGood)
         {
             // Distance Priority, Uses this is melee is used
@@ -809,9 +808,11 @@ bool IsTargetStateGood(CachedEntity *entity)
     PROF_SECTION(PT_aimbot_targetstatecheck);
 
     const int current_type = entity->m_Type();
-    switch(current_type){
+    switch(current_type)
+    {
 
-    case(ENTITY_PLAYER):{
+    case(ENTITY_PLAYER):
+    {
         // Local player check
         if (entity == LOCAL_E)
             return false;
@@ -850,18 +851,14 @@ bool IsTargetStateGood(CachedEntity *entity)
                     return false;
             }
 
-        // Rage only check
-        if (rageonly)
-        {
-            if (playerlist::AccessData(entity).state != playerlist::k_EState::RAGE)
+
+            if (rageonly)
             {
-                return false;
+                if (playerlist::AccessData(entity).state != playerlist::k_EState::RAGE)
+                {
+                    return false;
+                }
             }
-        }
-
-            // don't aim if holding sapper
-
-
             // Wait for charge
             if (wait_for_charge && g_pLocalPlayer->holding_sniper_rifle)
             {
@@ -923,8 +920,6 @@ bool IsTargetStateGood(CachedEntity *entity)
             if (ignore_vaccinator && IsPlayerResistantToCurrentWeapon(entity))
                 return false;
 
-
-
         AimbotCalculatedData_s &cd = calculated_data_array[entity->m_IDX];
         cd.hitbox                  = BestHitbox(entity);
         bool vis_check = VischeckPredictedEntity(entity);
@@ -949,7 +944,8 @@ bool IsTargetStateGood(CachedEntity *entity)
         break;
     }
     // Check for buildings
-    case(ENTITY_BUILDING):{
+    case(ENTITY_BUILDING):
+    {
         // Don't aim if holding sapper
         if (g_pLocalPlayer->holding_sapper)
             return false;
@@ -1004,7 +1000,8 @@ bool IsTargetStateGood(CachedEntity *entity)
 
         return true;
     }
-    case(ENTITY_NPC):{
+    case(ENTITY_NPC):
+    {
     // NPCs (Skeletons, Merasmus, etc)
 
         // Sapper aimbot? no.
@@ -1182,26 +1179,23 @@ void DoAutoshoot(CachedEntity *target_entity)
     bool attack = true;
 
     // Rifle check
-
-        if (g_pLocalPlayer->clazz == tf_class::tf_sniper)
+    if (g_pLocalPlayer->clazz == tf_class::tf_sniper)
+    {
+        if (g_pLocalPlayer->holding_sniper_rifle)
         {
-            if (g_pLocalPlayer->holding_sniper_rifle)
-            {
-                if (zoomed_only && !CanHeadshot())
-                    attack = false;
-            }
+            if (zoomed_only && !CanHeadshot())
+            attack = false;
         }
+    }
 
 
     // Ambassador check
-
-        if (IsAmbassador(g_pLocalPlayer->weapon()))
-        {
-            // Check if ambasador can headshot
-            if (!AmbassadorCanHeadshot() && wait_for_charge)
-                attack = false;
-        }
-
+    if (IsAmbassador(g_pLocalPlayer->weapon()))
+    {
+        // Check if ambasador can headshot
+        if (!AmbassadorCanHeadshot() && wait_for_charge)
+        attack = false;
+    }
 
     // Autoshoot breaks with Slow aimbot, so use a workaround to detect when it
     // can
@@ -1237,9 +1231,7 @@ Vector PredictEntity(CachedEntity *entity, bool vischeck)
     if (cd.predict_tick == tickcount && cd.predict_type == vischeck && !shouldBacktrack(entity))
         return result;
     const short int curr_type = entity->m_Type();
-
-    // Players
-
+    
         // If using projectiles, predict a vector
         switch(curr_type){
         case ENTITY_PLAYER:{
@@ -1276,8 +1268,9 @@ Vector PredictEntity(CachedEntity *entity, bool vischeck)
         }
         break;
         }
-    // Buildings
-        case ENTITY_BUILDING:{
+        // Buildings
+        case ENTITY_BUILDING:
+        {
         if (projectileAimbotRequired)
         {
             std::pair<Vector, Vector> tmp_result;
@@ -1289,19 +1282,20 @@ Vector PredictEntity(CachedEntity *entity, bool vischeck)
             else
                 result = tmp_result.second;
         }
-        else{
+        else
             result = GetBuildingPosition(entity);
-        }
         break;
         }
-    // NPCs (Skeletons, merasmus, etc)
-        case ENTITY_NPC:{
+        // NPCs (Skeletons, merasmus, etc)
+        case ENTITY_NPC:
+        {
         result = entity->hitboxes.GetHitbox(std::max(0, entity->hitboxes.GetNumHitboxes() / 2 - 1))->center;
         break;
         }
 
-    // Other
-        default:{
+        // Other
+        default:
+        {
         result = entity->m_vecOrigin();
         break;
         }
@@ -1315,15 +1309,16 @@ Vector PredictEntity(CachedEntity *entity, bool vischeck)
     // Return the found vector
     return result;
 }
-int not_visible_hitbox(CachedEntity *target, int preferred){
+int not_visible_hitbox(CachedEntity *target, int preferred)
+{
     if (target->hitboxes.VisibilityCheck(preferred))
             return preferred;
         // Else attempt to find any hitbox at all
         else
         return hitbox_t::spine_1;
 }
-int auto_hitbox(CachedEntity* target){
-
+int auto_hitbox(CachedEntity* target)
+{
             int preferred=3;
             bool headonly = false;
             int target_health = target->m_iHealth(); // This was used way too many times. Due to how pointers work (defrencing)+the compiler already dealing with tons of AIDS global variables it likely derefrenced it every time it was called.
