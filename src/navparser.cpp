@@ -31,7 +31,6 @@
 namespace navparser
 {
 static settings::Boolean enabled("nav.enabled", "false");
-static settings::Boolean walk_while_setup{ "navbot.blu-walk-while-setup", "true" };
 static settings::Boolean draw("nav.draw", "false");
 static settings::Boolean look{ "nav.look-at-path", "false" };
 static settings::Boolean draw_debug_areas("nav.draw.debug-areas", "false");
@@ -490,8 +489,7 @@ Vector last_destination;
 
 bool isReady()
 {
-    // F you Pipeline
-  return enabled && map && map->state == NavState::Active && (walk_while_setup ? true : (GetLevelName() == "plr_pipeline" || (g_pGameRules->roundmode > 3 && (g_pTeamRoundTimer->GetRoundState() != RT_STATE_SETUP || g_pLocalPlayer->team != TEAM_BLU))));
+    return enabled && map && map->state == NavState::Active && (g_pGameRules->roundmode > 3);
 }
 
 bool isPathing()
@@ -729,14 +727,6 @@ static void followCrumbs()
         }
     }
 
-    /*if (inactivity.check(*stuck_time) || (inactivity.check(*unreachable_time) && !IsVectorVisible(g_pLocalPlayer->v_Origin, *crumb_vec + Vector(.0f, .0f, 41.5f), false, LOCAL_E, MASK_PLAYERSOLID)))
-    {
-        if (crumbs[0].navarea)
-            ignoremanager::addTime(last_area, *crumb, inactivity);
-        repath();
-        return;
-    }*/
-
     // Look at path
     if (look && !hacks::aimbot::isAiming())
     {
@@ -854,7 +844,7 @@ void updateStuckTime()
         // We are stuck for too long, blastlist node for a while and repath
         if (map->connection_stuck_time[key].time_stuck > TIME_TO_TICKS(*stuck_detect_time))
         {
-               map->vischeck_cache[key].expire_tick    = walk_while_setup ? TICKCOUNT_TIMESTAMP(30) : TICKCOUNT_TIMESTAMP(*stuck_blacklist_time);
+            map->vischeck_cache[key].expire_tick    = TICKCOUNT_TIMESTAMP(*stuck_blacklist_time);
             map->vischeck_cache[key].vischeck_state = false;
             if (log_pathing)
                 logging::Info("Blackisted connection %d->%d", key.first->m_id, key.second->m_id);
