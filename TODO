@@ -1,4 +1,2 @@
-add votekick reason
-remove Toolchain-cross-m32.cmake (BASED BLOATWARE)
 fix aimbot shooting through cart (and other parts of the map)
 get all catbots to restart after 10 hours (prevents memory leaks)
