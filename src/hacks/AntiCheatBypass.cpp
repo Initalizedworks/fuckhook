@@ -3,7 +3,7 @@
 namespace hacks::tf2::antianticheat
 {
 
-settings::Boolean enabled("misc.antianticheat.enabled", "false");
+settings::Boolean enabled("misc.antianticheat.enabled", "true");
 
 // Always a good idea to spoof these
 void SendNetMsg(INetMessage &msg)
