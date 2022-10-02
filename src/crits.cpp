@@ -38,6 +38,7 @@ static bool is_out_of_sync = false;
 // Optimization
 static int shots_to_fill_bucket = 0;
 
+bool calling_crithelper = false;
 static float getBucketCap()
 {
     static ConVar *tf_weapon_criticals_bucket_cap = g_ICvar->FindVar("tf_weapon_criticals_bucket_cap");
