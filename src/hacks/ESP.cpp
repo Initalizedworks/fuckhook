@@ -16,7 +16,7 @@ namespace hacks::esp
 static settings::Boolean enable{ "esp.enable", "false" };
 static settings::Int max_dist{ "esp.range", "4096" };
 
-static settings::Int box_esp{ "esp.box.mode", "2" };
+static settings::Int box_esp{ "esp.box.mode", "1" };
 static settings::Int box_corner_size_height{ "esp.box.corner-size.height", "10" };
 static settings::Int box_corner_size_width{ "esp.box.corner-size.width", "10" };
 static settings::Boolean box_3d_player{ "esp.box.player-3d", "false" };
@@ -26,7 +26,7 @@ static settings::Boolean draw_bones{ "esp.bones", "false" };
 static settings::Float bones_thickness{ "esp.bones.thickness", "0.5" };
 static settings::Boolean bones_color{ "esp.bones.color", "false" };
 
-static settings::Int healthbar{ "esp.health-bar", "3" };
+static settings::Int healthbar{ "esp.health-bar", "0" };
 static settings::Int sightlines{ "esp.sightlines", "0" };
 static settings::Int esp_text_position{ "esp.text-position", "0" };
 static settings::Int esp_expand{ "esp.expand", "0" };
@@ -34,14 +34,14 @@ static settings::Boolean vischeck{ "esp.vischeck", "true" };
 static settings::Boolean hide_invis{ "esp.hide-invis", "false" };
 static settings::Boolean legit{ "esp.legit", "false" };
 
-static settings::Boolean local_esp{ "esp.show.local", "true" };
+static settings::Boolean local_esp{ "esp.show.local", "false" };
 static settings::Boolean buildings{ "esp.show.buildings", "true" };
 static settings::Boolean team_buildings{ "esp.show.team-buildings", "false" };
 static settings::Boolean teammates{ "esp.show.teammates", "true" };
 static settings::Boolean npc{ "esp.show.npc", "true" };
 
 static settings::Boolean show_weapon{ "esp.info.weapon", "false" };
-static settings::Boolean show_distance{ "esp.info.distance", "true" };
+static settings::Boolean show_distance{ "esp.info.distance", "false" };
 static settings::Boolean show_health{ "esp.info.health", "true" };
 static settings::Boolean show_name{ "esp.info.name", "true" };
 static settings::Boolean show_class{ "esp.info.class", "true" };
