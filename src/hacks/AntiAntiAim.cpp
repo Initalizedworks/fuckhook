@@ -60,7 +60,7 @@ void frameStageNotify(ClientFrameStage_t stage)
 #endif
 }
 
-static std::array<float, 6> yaw_resolves{ 0.0f, 260.0f, 150.0f, -90.0f, 180.0f, 30.0f  };
+static std::array<float, 8> yaw_resolves{ 0.0f, 180.0f, 65.0f, 90.0f, -180.0f, 260.0f, 30.0f, 20.0f };
 
 static float resolveAngleYaw(float angle, brutedata &brute)
 {
@@ -73,7 +73,7 @@ static float resolveAngleYaw(float angle, brutedata &brute)
 
     // Yaw Resolving
     // Find out which angle we should try
-    int entry = (int) std::floor((brute.brutenum / 3.0f)) % yaw_resolves.size();
+    int entry = (int) std::floor((brute.brutenum / 5.0f)) % yaw_resolves.size();
     angle += yaw_resolves[entry];
 
     while (angle > 180)
@@ -112,13 +112,13 @@ static float resolveAnglePitch(float angle, brutedata &brute, CachedEntity *ent)
     // No sniper dot/not using a sniperrifle.
     if (sniper_dot == nullptr)
     {
-        if (brute.brutenum % 2)
+        if (brute.brutenum % 3)
         {
             // Pitch resolver
-            if (angle >= 90)
-                angle = -89;
-            if (angle <= -90)
-                angle = 89;
+            if (angle >= 195)
+                angle = -195;
+            if (angle <= -270)
+                angle = 50;
         }
     }
     // Sniper dot found, use it.
