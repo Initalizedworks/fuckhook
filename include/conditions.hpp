@@ -194,6 +194,7 @@ constexpr condition_data_s KDisguisedMask    = CreateConditionMask(TFCond_Disgui
 constexpr condition_data_s KVisibilityMask      = CreateConditionMask(TFCond_OnFire, TFCond_Jarated, TFCond_CloakFlicker, TFCond_Milked, TFCond_Bleeding);
 constexpr condition_data_s KInvulnerabilityMask = CreateConditionMask(TFCond_Ubercharged, TFCond_UberchargedCanteen, TFCond_UberchargedHidden, TFCond_UberchargedOnTakeDamage, TFCond_Bonked, TFCond_DefenseBuffMmmph);
 constexpr condition_data_s KCritBoostMask       = CreateConditionMask(TFCond_Kritzkrieged, TFCond_CritRuneTemp, TFCond_CritCanteen, TFCond_CritMmmph, TFCond_CritOnKill, TFCond_CritOnDamage, TFCond_CritOnFirstBlood, TFCond_CritOnWin, TFCond_CritRuneTemp, TFCond_HalloweenCritCandy);
+constexpr condition_data_s KMiniCritBoostMask   = CreateConditionMask(TFCond_Buffed, TFCond_CritCola, TFCond_NoHealingDamageBuff, TFCond_MiniCritOnKill);
 
 // Compiler will optimize this to extremely small functions I guess.
 // These functions are never used with dynamic "cond" value anyways.

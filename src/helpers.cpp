@@ -1674,6 +1674,11 @@ bool IsPlayerCritBoosted(CachedEntity *player)
     return HasConditionMask<KCritBoostMask.cond_0, KCritBoostMask.cond_1, KCritBoostMask.cond_2, KCritBoostMask.cond_3>(player);
 }
 
+bool IsPlayerMiniCritBoosted(CachedEntity *player)
+{
+    return HasConditionMask<KMiniCritBoostMask.cond_0, KMiniCritBoostMask.cond_1, KMiniCritBoostMask.cond_2, KMiniCritBoostMask.cond_3>(player);
+}
+
 bool IsPlayerInvisible(CachedEntity *player)
 {
     return HasConditionMask<KInvisibilityMask.cond_0, KInvisibilityMask.cond_1, KInvisibilityMask.cond_2, KInvisibilityMask.cond_3>(player);

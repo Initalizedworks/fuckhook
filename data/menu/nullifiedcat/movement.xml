@@ -42,9 +42,6 @@
             <AutoVariable width="fill" target="navbot.enabled" label="Enable NavBot"/>
             <AutoVariable width="fill" target="navbot.capture-objectives" label="Capture objectives" tooltip="Automatically capture objectives (CTF, CP, and PL only)"/>
             <AutoVariable width="fill" target="navbot.defend-payload" label="Defend payload"/>
-            <AutoVariable width="fill" target="navbot.autozoom.enabled" label="Enable autozoom"/>
-            <AutoVariable width="fill" target="navbot.autozoom.trigger-distance" label="Zoom distance"/>
-            <AutoVariable width="fill" target="navbot.autozoom.unzoom-time" label="Unzoom Time"/>
             <AutoVariable width="fill" target="navbot.primary-only-melee-range" label="Melee Range"/>
             <AutoVariable width="fill" target="navbot.search-health" label="Search health"/>
             <AutoVariable width="fill" target="navbot.search-ammo" label="Search ammo"/>
