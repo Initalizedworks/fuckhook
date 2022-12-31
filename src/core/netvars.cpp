@@ -42,7 +42,8 @@ void NetVars::Init()
     m_angEyeAnglesLocal             = gNetvars.get_offset("DT_TFPlayer", "tflocaldata", "m_angEyeAngles[0]");
     this->bGlowEnabled              = gNetvars.get_offset("DT_TFPlayer", "m_bGlowEnabled");
     this->iItemDefinitionIndex      = gNetvars.get_offset("DT_EconEntity", "m_AttributeManager", "m_Item", "m_iItemDefinitionIndex");
-    this->AttributeList             = gNetvars.get_offset("DT_EconEntity", "m_AttributeManager", "m_Item", "m_AttributeList");
+    this->AttributeList             = gNetvars.get_offset("DT_EconEntity", "m_AttributeManager", "m_Item", 
+                                                          "m_AttributeList");
     this->flChargeBeginTime         = gNetvars.get_offset("DT_WeaponPipebombLauncher", "PipebombLauncherLocalData", "m_flChargeBeginTime");
     this->flDetonateTime            = gNetvars.get_offset("DT_WeaponGrenadeLauncher", "m_flDetonateTime");
     this->flLastFireTime            = gNetvars.get_offset("DT_TFWeaponBase", "LocalActiveTFWeaponData", "m_flLastFireTime");
@@ -67,6 +68,7 @@ void NetVars::Init()
     this->m_bViewingCYOAPDA         = gNetvars.get_offset("DT_TFPlayer", "m_bViewingCYOAPDA");
     this->res_iScore                = gNetvars.get_offset("DT_TFPlayerResource", "baseclass", "m_iScore");
     this->m_hOwnerEntity            = gNetvars.get_offset("DT_BaseEntity", "m_hOwnerEntity");
+    this->m_hOriginalLauncher       = gNetvars.get_offset("DT_BaseProjectile", "m_hOriginalLauncher");
     this->res_iMaxHealth            = gNetvars.get_offset("DT_TFPlayerResource", "m_iMaxHealth");
     this->res_iPlayerClass          = gNetvars.get_offset("DT_TFPlayerResource", "m_iPlayerClass");
     this->m_bReadyToBackstab        = gNetvars.get_offset("DT_TFWeaponKnife", "m_bReadyToBackstab");
