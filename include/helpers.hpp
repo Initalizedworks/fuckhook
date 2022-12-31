@@ -138,7 +138,7 @@ bool AmbassadorCanHeadshot();
 void ValidateUserCmd(CUserCmd *cmd, int sequence_nr);
 
 // Convert a TF2 handle into an IDX -> ENTITY(IDX)
-int HandleToIDX(int handle);
+#define HandleToIDX(handle) (handle & 0xFFFF)
 
 inline const char *teamname(int team)
 {
@@ -240,6 +240,8 @@ template <typename... Args> std::string format(const Args &...args)
     format_internal(stream, args...);
     return stream.str();
 }
+
+CSteamID CSteamIDFrom32(uint32_t id32);
 
 extern const std::string classes[10];
 extern const char *powerups[POWERUP_COUNT];
