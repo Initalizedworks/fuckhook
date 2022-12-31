@@ -4,9 +4,7 @@
  *  Created on: Nov 23, 2017
  *      Author: nullifiedcat
  */
-
 #pragma once
-
 #include <common.hpp>
 
 namespace re
@@ -167,7 +165,6 @@ public:
             {
                 // Always run calculations
                 // Never write anything into entity, at least from here.
-
                 // if (g_GlobalVars->framecount != *(int *)(self + 2872))
                 {
                     // *(int *)(self + 2872) = g_GlobalVars->framecount;
@@ -188,7 +185,6 @@ public:
                 }
             }
         }
-
         return 0;
     }
     inline static uint16_t &weapon_info_handle_(IClientEntity *self)
