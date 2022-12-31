@@ -39,7 +39,7 @@ void BeginConVars()
         {
             cfg_autoexec << "// Put your custom cathook settings in this "
                             "file\n// This script will be executed EACH TIME "
-                            "YOU INJECT CATHOOK\n";
+                            "YOU INJECT BURGERHOOK\n";
         }
     }
     if (!std::ifstream("tf/cfg/cat_matchexec.cfg"))
@@ -49,9 +49,8 @@ void BeginConVars()
         {
             cfg_autoexec << "// Put your custom cathook settings in this "
                             "file\n// This script will be executed EACH TIME "
-                            "YOU JOIN A MATCH\n"
-                            "exec trusted.cfg";
-        }
+                            "YOU JOIN A MATCH\n";
+         }
     }
     logging::Info(":b:");
     SetCVarInterface(g_ICvar);
@@ -1066,14 +1065,9 @@ bool IsEntityVectorVisible(CachedEntity *entity, Vector endpos, bool use_weapon_
         trace = &trace_object;
     Ray_t ray;
 
-    if (g_Settings.bInvalid)
-        return false;
     if (entity == g_pLocalPlayer->entity)
         return true;
-    if (CE_BAD(g_pLocalPlayer->entity))
-        return false;
-    if (CE_BAD(entity))
-        return false;
+    
     trace::filter_default.SetSelf(RAW_ENT(g_pLocalPlayer->entity));
     Vector eye = g_pLocalPlayer->v_Eye;
     // Adjust for weapon offsets if needed
@@ -1174,11 +1168,6 @@ Vector GetBuildingPosition(CachedEntity *ent)
 bool IsBuildingVisible(CachedEntity *ent)
 {
     return IsEntityVectorVisible(ent, GetBuildingPosition(ent));
-}
-
-int HandleToIDX(int handle)
-{
-    return handle & 0xFFF;
 }
 
 int GetScoreForEntity_aim(CachedEntity *entity)
@@ -1313,7 +1302,7 @@ CachedEntity *weapon_get(CachedEntity *entity)
     if (CE_BAD(entity))
         return 0;
     handle = CE_INT(entity, netvar.hActiveWeapon);
-    eid    = handle & 0xFFF;
+    eid    = HandleToIDX(handle);
     if (IDX_BAD(eid))
         return 0;
     return ENTITY(eid);
@@ -1321,18 +1310,20 @@ CachedEntity *weapon_get(CachedEntity *entity)
 
 weaponmode GetWeaponMode(CachedEntity *ent)
 {
-    int weapon_handle, slot;
+    int weapon_handle, weapon_idx, slot;
     CachedEntity *weapon;
 
     if (CE_BAD(ent) || CE_BAD(weapon_get(ent)))
         return weapon_invalid;
     weapon_handle = CE_INT(ent, netvar.hActiveWeapon);
-    if (IDX_BAD((weapon_handle & 0xFFF)))
+    weapon_idx    = HandleToIDX(weapon_handle);
+
+    if (IDX_BAD(weapon_idx))
     {
-        // logging::Info("IDX_BAD: %i", weapon_handle & 0xFFF);
+        // logging::Info("IDX_BAD: %i", weapon_idx);
         return weaponmode::weapon_invalid;
     }
-    weapon = (ENTITY(weapon_handle & 0xFFF));
+    weapon = (ENTITY(weapon_idx));
     if (CE_BAD(weapon))
         return weaponmode::weapon_invalid;
     int classid = weapon->m_iClassID();
@@ -2072,17 +2063,6 @@ Vector getShootPos(Vector angle)
     return eye;
 }
 
-std::unique_ptr<char[]> format_cstr(const char *fmt, ...)
-{
-    // char *buf = new char[1024];
-    auto buf = std::make_unique<char[]>(1024);
-    va_list list;
-    va_start(list, fmt);
-    vsprintf(buf.get(), fmt, list);
-    va_end(list);
-    return buf;
-}
-
 void ChangeName(std::string name)
 {
     auto custom_name = settings::Manager::instance().lookup("name.custom");
@@ -2099,6 +2079,12 @@ void ChangeName(std::string name)
         ch->SendNetMsg(setname, false);
     }
 }
+
+CSteamID CSteamIDFrom32(uint32_t id32)
+{
+    return { id32, EUniverse::k_EUniversePublic, EAccountType::k_EAccountTypeIndividual };
+}
+
 const char *powerups[] = { "Strength", "Resistance", "Vampire", "Reflect", "Haste", "Regeneration", "Precision", "Agility", "Knockout", "King", "Plague", "Supernova", "Revenge" };
 
 const std::string classes[] = { "Scout", "Sniper", "Soldier", "Demoman", "Medic", "Heavy", "Pyro", "Spy", "Engineer" };
@@ -2124,6 +2110,17 @@ int SharedRandomInt(unsigned iseed, const char *sharedname, int iMinVal, int iMa
     int seed = SeedFileLineHash(iseed, sharedname, additionalSeed);
     g_pUniformStream->SetSeed(seed);
     return g_pUniformStream->RandomInt(iMinVal, iMaxVal);
+}
+
+std::unique_ptr<char[]> format_cstr(const char *fmt, ...)
+{
+    // char *buf = new char[1024];
+    auto buf = std::make_unique<char[]>(1024);
+    va_list list;
+    va_start(list, fmt);
+    vsprintf(buf.get(), fmt, list);
+    va_end(list);
+    return buf;
 }
 
 bool GetPlayerInfo(int idx, player_info_s *info)
