@@ -124,6 +124,7 @@ CatCommand fix_black_glow("fix_black_glow", "Fix Black Glow",
 
 void EffectGlow::Init()
 {
+
     if (init)
         return;
     logging::Info("Init Glow...");
@@ -393,7 +394,7 @@ void EffectGlow::DrawEntity(IClientEntity *entity)
     passes = 0;
 
     entity->DrawModel(1);
-    attach = g_IEntityList->GetClientEntity(*(int *) ((uintptr_t) entity + netvar.m_Collision - 24) & 0xFFF);
+    attach = g_IEntityList->GetClientEntity(HandleToIDX(*(int *) ((uintptr_t) entity + netvar.m_Collision - 24)));
     while (attach && passes++ < 32)
     {
         if (attach->ShouldDraw())
@@ -411,7 +412,7 @@ void EffectGlow::DrawEntity(IClientEntity *entity)
                 attach->DrawModel(1);
             }
         }
-        attach = g_IEntityList->GetClientEntity(*(int *) ((uintptr_t) attach + netvar.m_Collision - 20) & 0xFFF);
+        attach = g_IEntityList->GetClientEntity(HandleToIDX(*(int *) ((uintptr_t) attach + netvar.m_Collision - 20)));
     }
 }
 
