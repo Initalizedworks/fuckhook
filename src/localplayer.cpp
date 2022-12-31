@@ -16,18 +16,19 @@ CatCommand printfov("fov_print", "Dump achievements to file (development)",
                     });
 weaponmode GetWeaponModeloc()
 {
-    int weapon_handle, slot;
+    int weapon_handle, weapon_idx, slot;
     CachedEntity *weapon;
 
     if (CE_BAD(LOCAL_E) | CE_BAD(LOCAL_W))
         return weapon_invalid;
     weapon_handle = CE_INT(LOCAL_E, netvar.hActiveWeapon);
-    if (IDX_BAD((weapon_handle & 0xFFF)))
+    weapon_idx    = HandleToIDX(weapon_handle);
+    if (IDX_BAD(weapon_idx))
     {
-        // logging::Info("IDX_BAD: %i", weapon_handle & 0xFFF);
+        // logging::Info("IDX_BAD: %i", weapon_idx);
         return weaponmode::weapon_invalid;
     }
-    weapon = (ENTITY(weapon_handle & 0xFFF));
+    weapon = (ENTITY(weapon_idx));
     if (CE_BAD(weapon))
         return weaponmode::weapon_invalid;
     int classid = weapon->m_iClassID();
@@ -182,7 +183,7 @@ void LocalPlayer::Update()
             // Assign the for loops tick number to an ent
             CachedEntity *ent = ENTITY(i);
             player_info_s info;
-            if (!CE_BAD(ent) && ent != LOCAL_E && ent->m_Type() == ENTITY_PLAYER && (CE_INT(ent, netvar.hObserverTarget) & 0xFFF) == LOCAL_E->m_IDX && GetPlayerInfo(i, &info))
+            if (!CE_BAD(ent) && (HandleToIDX(CE_INT(ent, netvar.hObserverTarget))) == LOCAL_E->m_IDX)
             {
                 switch (CE_INT(ent, netvar.iObserverMode))
                 {
@@ -221,7 +222,7 @@ CachedEntity *LocalPlayer::weapon()
     if (CE_BAD(entity))
         return 0;
     handle = CE_INT(entity, netvar.hActiveWeapon);
-    eid    = handle & 0xFFF;
+    eid    = HandleToIDX(handle);
     if (IDX_BAD(eid))
         return 0;
     return ENTITY(eid);
