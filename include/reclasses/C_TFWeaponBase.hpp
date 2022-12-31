@@ -4,10 +4,14 @@
  *  Created on: Nov 23, 2017
  *      Author: nullifiedcat
  */
+
 #pragma once
+
 #include <common.hpp>
+
 namespace re
 {
+
 class C_TFWeaponBase : public re::C_BaseCombatWeapon
 {
 public:
@@ -81,7 +85,7 @@ public:
     inline static float ApplyFireDelay(IClientEntity *self, float delay)
     {
         typedef float (*ApplyFireDelay_t)(IClientEntity *, float);
-        static auto signature                     = gSignatures.GetClientSignature("55 89 E5 57 56 53 83 EC 6C C7 45 ? 00 00 00 00 A1 ? ? ? ? C7 45 ? 00 00 00 00 8B 5D ? 85 C0 0F 84 ? ? ? ? 8D 55 ? 89 04 24 31 F6 89 54 24 ? C7 44 24 ? ? ? ? ? C7 44 24 ? ? ? ? ? C7 44 24 ? ? ? ? ? C7 44 24 ? ? ? ? ? C7 44 24 ? 6B 00 00 00 C7 44 24 ? ? ? ? ? C7 44 24 ? 00 00 00 00 C7 44 24 ? 00 00 00 00 C7 44 24 ? 00 00 00 00 C7 44 24 ? 00 00 00 00 FF 50 ? A1 ? ? ? ? 8B 0D ? ? ? ? 8B 55 ? 89 45 ? 8B 45 ? 85 C9 89 55 ? 89 45 ? 0F 85 ? ? ? ? 85 DB 0F 84 ? ? ? ? 8B 7B ? 85 FF 0F 84 ? ? ? ? C7 04 24 ? ? ? ? E8 ? ? ? ? 89 45 ? 8B 07 89 3C 24 FF 10 8B 7D ? 8B 10 C7 44 24 ? 00 00 00 00 89 5C 24 ? C7 44 24 ? ? ? ? ? 89 7C 24 ? 89 04 24 FF 52 ? D9 5D ? F3 0F 10 45 ? F3 0F 11 04 24 E8 ? ? ? ? D9 5D");
+        static auto signature                     = gSignatures.GetClientSignature("55 89 E5 57 56 53 83 EC 6C C7 45 ? 00 00 00 00 A1 ? ? ? ? C7 45 ? 00 00 00 00 8B 5D ? 85 C0 0F 84 ? ? ? ? 8D 55 ? 89 04 24 31 F6 89 54 24 ? C7 44 24 ? ? ? ? ? C7 44 24 ? ? ? ? ? C7 44 24 ? ? ? ? ? C7 44 24 ? ? ? ? ? C7 44 24 ? 6B 00 00 00 C7 44 24 ? ? ? ? ? C7 44 24 ? 00 00 00 00 C7 44 24 ? 00 00 00 00 C7 44 24 ? 00 00 00 00 C7 44 24 ? 00 00 00 00 FF 50 ? A1 ? ? ? ? 8B 3D ? ? ? ? 8B 55 ? 89 45 ? 8B 45 ? 85 FF 89 55 ? 89 45 ? 0F 85 ? ? ? ? 85 DB 0F 84 ? ? ? ? 8B 7B ? 85 FF 0F 84 ? ? ? ? C7 04 24 ? ? ? ? E8 ? ? ? ? 89 45 ? 8B 07 89 3C 24 FF 10 8B 7D ? 8B 10 C7 44 24 ? 00 00 00 00 89 5C 24 ? C7 44 24 ? 00 00 80 3F 89 7C 24 ? 89 04 24 FF 52 ? D9 5D ? F3 0F 10 45 ? F3 0F 11 04 24 E8 ? ? ? ? D9 5D");
         static ApplyFireDelay_t ApplyFireDelay_fn = (ApplyFireDelay_t) signature;
         return ApplyFireDelay_fn(self, delay);
     }
@@ -97,29 +101,37 @@ public:
         /*
         if (!weapon_info->unk_1736)
         {
+
         }
         */
     }
     inline static bool CalcIsAttackCriticalHelper_re(IClientEntity *self)
     {
         IClientEntity *owner = GetOwnerViaInterface(self);
+
         if (owner == nullptr)
             return false;
+
         if (!C_BaseEntity::IsPlayer(owner))
             return false;
+
         CTFPlayerShared *shared = &C_BasePlayer::shared_(owner);
         float critmult          = CTFPlayerShared::GetCritMult(shared);
         if (!CanFireCriticalShot(self, 0, nullptr))
             return false;
+
         if (CTFPlayerShared::IsCritBoosted(shared))
             return true;
+
         int unk1 = *(int *) (unsigned(self) + 2832u);
         int unk2 = *(int *) (unsigned(self) + 2820u);
         unk2 <<= 6;
+
         int unk3  = unk1 + unk2 + 1784;
         char unk4 = *(char *) (unk1 + unk2 + 1844);
         if (unk4 && *(float *) (unsigned(self) + 2864u) > g_GlobalVars->curtime)
             return true;
+
         int unk5         = *(int *) (unk1 + unk2 + 1788);
         int bullet_count = 0;
         if (unk5 > 0)
@@ -130,16 +142,20 @@ public:
         {
             bullet_count = 1;
         }
+
         float mult2 = *(float *) (unk3);
+
         float multiplier = 0.5f;
         int seed         = C_BaseEntity::m_nPredictionRandomSeed() ^ (owner->entindex() | (self->entindex() << 8));
         RandomSeed(seed);
+
         bool result = true;
         if (multiplier * 10000.0f <= RandomInt(0, 9999))
         {
             result     = false;
             multiplier = 0.0f;
         }
+
         return false;
     }
     inline static int CalcIsAttackCritical(IClientEntity *self)
@@ -151,10 +167,12 @@ public:
             {
                 // Always run calculations
                 // Never write anything into entity, at least from here.
+
                 // if (g_GlobalVars->framecount != *(int *)(self + 2872))
                 {
                     // *(int *)(self + 2872) = g_GlobalVars->framecount;
                     // *(char *)(self + 2839) = 0;
+
                     if (g_pGameRules->roundmode == 5 && g_pGameRules->winning_team == NET_INT(owner, netvar.iTeamNum))
                     {
                         // *(char *)(self + 2838) = 1;
@@ -170,6 +188,7 @@ public:
                 }
             }
         }
+
         return 0;
     }
     inline static uint16_t &weapon_info_handle_(IClientEntity *self)
