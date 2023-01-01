@@ -1140,26 +1140,18 @@ std::optional<Vector> getPayloadGoal(int our_team)
 
 std::optional<Vector> getControlPointGoal(int our_team)
 {
-    static Vector previous_position(0.0f);
-    static Vector randomized_position(0.0f);
 
-    auto position = cpcontroller::getClosestControlPoint(g_pLocalPlayer->v_Origin, our_team);
+   auto position = cpcontroller::getClosestControlPoint(g_pLocalPlayer->v_Origin, our_team);
     // No points found :(
     if (!position)
         return std::nullopt;
 
-    // Randomize where on the point we walk a bit so bots don't just stand there
-    if (previous_position != *position || !navparser::NavEngine::isPathing())
     {
-        previous_position   = *position;
-        randomized_position = *position;
-        randomized_position.x += RandomFloat(0.0f, 100.0f);
-        randomized_position.y += RandomFloat(0.0f, 100.0f);
+       overwrite_capture = true;
+        return std::nullopt;
     }
-
-    current_capturetype = controlpoints;
-    // Try to navigate
-    return randomized_position;
+else
+        return position;
 }
 
 // Try to capture objectives

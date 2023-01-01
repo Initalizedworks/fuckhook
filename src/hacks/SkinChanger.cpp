@@ -285,7 +285,7 @@ void FrameStageNotify(int stage)
 
     weapon_list   = (int *) ((unsigned) (RAW_ENT(LOCAL_E)) + netvar.hMyWeapons);
     my_weapon     = CE_INT(g_pLocalPlayer->entity, netvar.hActiveWeapon);
-    my_weapon_ptr = g_IEntityList->GetClientEntity(my_weapon & 0xFFF);
+    my_weapon_ptr = g_IEntityList->GetClientEntity(HandleToIDX(my_weapon));
     if (!my_weapon_ptr)
         return;
     if (!re::C_BaseCombatWeapon::IsBaseCombatWeapon(my_weapon_ptr))
@@ -293,7 +293,7 @@ void FrameStageNotify(int stage)
     for (int i = 0; i < 4; i++)
     {
         handle = weapon_list[i];
-        eid    = handle & 0xFFF;
+        eid    = HandleToIDX(handle);
         if (eid <= MAX_PLAYERS || eid > HIGHEST_ENTITY)
             continue;
         // logging::Info("eid, %i", eid);
@@ -310,7 +310,7 @@ void FrameStageNotify(int stage)
         }
     }
     if ((my_weapon_ptr != last_weapon_out) || !cookie.Check())
-        cookie.Update(my_weapon & 0xFFF);
+        cookie.Update(HandleToIDX(my_weapon));
     last_weapon_out = my_weapon_ptr;
 }
 

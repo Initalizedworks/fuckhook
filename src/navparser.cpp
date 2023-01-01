@@ -19,7 +19,6 @@
 #include "CNavFile.h"
 #include "teamroundtimer.hpp"
 #include "Aimbot.hpp"
-#include "MiscAimbot.hpp"
 #include "navparser.hpp"
 #if ENABLE_VISUALS
 #include "drawing.hpp"
@@ -733,8 +732,6 @@ static void followCrumbs()
         Vector next{ crumbs[0].vec.x, crumbs[0].vec.y, g_pLocalPlayer->v_Eye.z };
         next = GetAimAtAngles(g_pLocalPlayer->v_Eye, next);
 
-        // Slow aim to smoothen
-        hacks::misc_aimbot::DoSlowAim(next);
         current_user_cmd->viewangles = next;
     }
 

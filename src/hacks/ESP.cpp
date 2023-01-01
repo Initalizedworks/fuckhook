@@ -1277,7 +1277,7 @@ void _FASTCALL ProcessEntity(CachedEntity *ent)
                     for (int i = 0; weapon_list[i]; i++)
                     {
                         int handle = weapon_list[i];
-                        int eid    = handle & 0xFFF;
+                        int eid    = HandleToIDX(handle);
                         if (eid > MAX_PLAYERS && eid <= HIGHEST_ENTITY)
                         {
                             CachedEntity *weapon = ENTITY(eid);
@@ -1355,7 +1355,7 @@ void _FASTCALL ProcessEntity(CachedEntity *ent)
 
                 // We want revving, zoomed and slowed to be mutually exclusive. Otherwise slowed and zoomed/revving will show at the same time.
                 // Revving
-                auto weapon_idx      = CE_INT(ent, netvar.hActiveWeapon) & 0xFFF;
+                auto weapon_idx      = HandleToIDX(CE_INT(ent, netvar.hActiveWeapon));
                 CachedEntity *weapon = IDX_GOOD(weapon_idx) ? ENTITY(weapon_idx) : nullptr;
                 if (CE_GOOD(weapon) && weapon->m_iClassID() == CL_CLASS(CTFMinigun) && CE_INT(weapon, netvar.iWeaponState) != 0)
                     AddEntityString(ent, revving_str, colors::FromRGBA8(220.0f, 220.0f, 220.0f, 255.0f));
@@ -1380,7 +1380,7 @@ void _FASTCALL ProcessEntity(CachedEntity *ent)
             // Active weapon esp
             if (show_weapon)
             {
-                int widx = CE_INT(ent, netvar.hActiveWeapon) & 0xFFF;
+                int widx = HandleToIDX(CE_INT(ent, netvar.hActiveWeapon));
                 if (IDX_GOOD(widx))
                 {
                     CachedEntity *weapon = ENTITY(widx);
@@ -1446,7 +1446,6 @@ void _FASTCALL Draw3DBox(CachedEntity *ent, const rgba_t &clr)
     corners[7] = mins + Vector(0, y, z);
 
     // Rotate the box and check if any point of the box isnt on the screen
-    bool success = true;
     for (int i = 0; i < 8; i++)
     {
         float yaw    = NET_VECTOR(RAW_ENT(ent), netvar.m_angEyeAngles).y;
@@ -1459,13 +1458,8 @@ void _FASTCALL Draw3DBox(CachedEntity *ent, const rgba_t &clr)
         corners[i] += origin;
 
         if (!draw::WorldToScreen(corners[i], points[i]))
-            success = false;
+            return;
     }
-
-    // Don't continue if a point isn't on the screen
-    if (!success)
-        return;
-
     rgba_t draw_clr = clr;
     // Draw the actual box
     for (int i = 1; i <= 4; i++)
@@ -1610,17 +1604,12 @@ bool GetCollide(CachedEntity *ent)
         points_r[5] = mins + Vector(x, 0, z);
         points_r[6] = mins + Vector(x, y, z);
         points_r[7] = mins + Vector(0, y, z);
-
-        // Check if any point of the box isnt on the screen
-        bool success = true;
+        
         for (int i = 0; i < 8; i++)
         {
             if (!draw::WorldToScreen(points_r[i], points[i]))
-                success = false;
+                return false;
         }
-        // If a point isnt on the screen, return here
-        if (!success)
-            return false;
 
         // Get max and min of the box using the newly created screen vector
         int max_x = -1;
