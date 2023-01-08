@@ -26,7 +26,7 @@ static settings::Boolean normal_enable{ "aimbot.enable", "false" };
 static settings::Button aimkey{ "aimbot.aimkey.button", "<null>" };
 static settings::Int aimkey_mode{ "aimbot.aimkey.mode", "1" };
 static settings::Boolean autoshoot{ "aimbot.autoshoot", "1" };
-static settings::Boolean autoreload{ "aimbot.autoshoot.activate-heatmaker", "false" };
+static settings::Boolean autoreload{ "aimbot.autoshoot.activate-heatmaker", "true" };
 static settings::Boolean autoshoot_disguised{ "aimbot.autoshoot-disguised", "1" };
 static settings::Int multipoint{ "aimbot.multipoint", "0" };
 static settings::Int hitbox_mode{ "aimbot.hitbox-mode", "0" };
@@ -37,13 +37,13 @@ static settings::Boolean wait_for_charge{ "aimbot.wait-for-charge", "0" };
 static settings::Boolean silent{ "aimbot.silent", "1" };
 static settings::Boolean target_lock{ "aimbot.lock-target", "0" };
 static settings::Int hitbox{ "aimbot.hitbox", "0" };
-static settings::Boolean zoomed_only{ "aimbot.zoomed-only", "1" };
+static settings::Boolean zoomed_only{ "aimbot.zoomed-only", "0" };
 static settings::Boolean only_can_shoot{ "aimbot.can-shoot-only", "1" };
 
-static settings::Boolean extrapolate{ "aimbot.extrapolate", "0" };
+static settings::Boolean extrapolate{ "aimbot.extrapolate", "false" };
 static settings::Int normal_slow_aim{ "aimbot.slow", "0" };
 
-static settings::Boolean projectile_aimbot{ "aimbot.projectile.enable", "true" };
+static settings::Boolean projectile_aimbot{ "aimbot.projectile.enable", "false" };
 static settings::Float proj_gravity{ "aimbot.projectile.gravity", "0" };
 static settings::Float proj_speed{ "aimbot.projectile.speed", "0" };
 static settings::Float proj_start_vel{ "aimbot.projectile.initial-velocity", "0" };
@@ -60,7 +60,7 @@ static settings::Int zoom_time("aimbot.auto.zoom.time", "5000");
 static settings::Int zoom_distance{ "aimbot.zoom.distance", "1250" };
 
 static settings::Boolean backtrackAimbot{ "aimbot.backtrack", "0" };
-static settings::Boolean backtrackLastTickOnly("aimbot.backtrack.only-last-tick", "true");
+static settings::Boolean backtrackLastTickOnly("aimbot.backtrack.only-last-tick", "false");
 static bool force_backtrack_aimbot = false;
 static settings::Boolean backtrackVischeckAll{ "aimbot.backtrack.vischeck-all", "0" };
 
@@ -232,7 +232,7 @@ std::optional<Vector> getBestHitpoint(CachedEntity *ent, int hitbox)
 
 #if ENABLE_VISUALS
 /* why on earth is this a number???? shouldnt it be true/false like the other booleans ??? */
-static settings::Boolean fov_draw{ "aimbot.fov-circle.enable", "1" };
+static settings::Boolean fov_draw{ "aimbot.fov-circle.enable", "true" };
 static settings::Float fovcircle_opacity{ "aimbot.fov-circle.opacity", "1.0" };
 #endif
 
@@ -304,13 +304,13 @@ bool validateTickFOV(backtrack::BacktrackData &tick)
     return true;
 }
 
-// Am I holding Hitman's Heatmaker ?
+// Am I holding the Hitman's Heatmaker?
 bool CarryingHeatmaker()
 {
     return CE_INT(LOCAL_W, netvar.iItemDefinitionIndex) == 752;
 }
 
-// Am I holding the Machina ?
+// Am I holding the Machina?
 bool CarryingMachina()
 {
     return CE_INT(LOCAL_W, netvar.iItemDefinitionIndex) == 526 || CE_INT(LOCAL_W, netvar.iItemDefinitionIndex) == 30665;
@@ -365,7 +365,8 @@ static void doAutoZoom(bool target_found, CachedEntity *target)
     }
 
     auto nearest = hacks::NavBot::getNearestPlayerDistance();
-    if ((auto_zoom && !allowNoScope(target)) && g_pLocalPlayer->holding_sniper_rifle && (target_found || isIdle || nearest.second <= *zoom_distance)) {
+   if (!allowNoScope(target) && g_pLocalPlayer->holding_sniper_rifle && (target_found || isIdle || nearest.second < *zoom_distance))
+    {
         if (target_found)
             zoomTime.update();
         if (!g_pLocalPlayer->bZoomed)
@@ -657,8 +658,6 @@ bool ShouldAim()
         // Deadringer out?
         else if (CE_BYTE(g_pLocalPlayer->entity, netvar.m_bFeignDeathReady))
             return false;
-        else if (g_pLocalPlayer->holding_sapper)
-                return false;
         // Is bonked?
         else if (HasCondition<TFCond_Bonked>(g_pLocalPlayer->entity))
             return false;
@@ -982,11 +981,8 @@ bool IsTargetStateGood(CachedEntity *entity)
     // Check for buildings
     case(ENTITY_BUILDING):
     {
-        // Don't aim if holding sapper
-        if (g_pLocalPlayer->holding_sapper)
-            return false;
         // Enabled check
-        else if (!(buildings_other || buildings_sentry))
+           if (!(buildings_other || buildings_sentry))
             return false;
         // Teammates, Even with friendly fire enabled, buildings can NOT be
         // damaged
@@ -1039,13 +1035,8 @@ bool IsTargetStateGood(CachedEntity *entity)
     case(ENTITY_NPC):
     {
     // NPCs (Skeletons, Merasmus, etc)
-
-        // Sapper aimbot? no.
-        if (g_pLocalPlayer->holding_sapper)
-            return false;
-
         // NPC targeting is disabled
-        else if (!npcs)
+        if (!npcs)
             return false;
 
         // Cannot shoot this
@@ -1090,7 +1081,7 @@ bool IsTargetStateGood(CachedEntity *entity)
                 return false;
 
         // Teammates, Even with friendly fire enabled, stickys can NOT be
-        // destroied
+        // destroyed
         if (!entity->m_bEnemy())
             return false;
 
@@ -1137,10 +1128,6 @@ void Aim(CachedEntity *entity)
         return;
     // Get angles from eye to target
     Vector angles = GetAimAtAngles(g_pLocalPlayer->v_Eye, PredictEntity(entity, false), LOCAL_E);
-
-    // Slow aim
-    if (slow_aim)
-        DoSlowAim(angles);
 
     // Set angles
     current_user_cmd->viewangles = angles;
@@ -1219,7 +1206,7 @@ void DoAutoshoot(CachedEntity *target_entity)
     {
         if (g_pLocalPlayer->holding_sniper_rifle)
         {
-            if (zoomed_only && !CanHeadshot())
+            if (zoomed_only && !CanHeadshot() && !allowNoScope(target_entity))
             attack = false;
         }
     }
@@ -1405,7 +1392,7 @@ int auto_hitbox(CachedEntity* target)
             }
 
 
-            // Hunstman
+            // Huntsman
             else if (ci == CL_CLASS(CTFCompoundBow))
             {
                 float begincharge = CE_FLOAT(g_pLocalPlayer->weapon(), netvar.flChargeBeginTime);
